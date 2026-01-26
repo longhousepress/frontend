@@ -11,13 +11,29 @@ const { title = 'Catalog' } = Astro.props;
     <link rel="icon" href="/favicon.ico" />
   </head>
   <body class="min-h-screen bg-base-100 text-base">
-    <header class="w-full border-b border-transparent/10">
-      <div class="max-w-7xl mx-auto px-4 py-4">
-        <h1 class="text-lg font-semibold">{title}</h1>
+    <!-- Sticky navbar (daisyUI) -->
+    <div class="sticky top-0 z-50">
+      <div class="navbar bg-base-100 shadow-sm">
+        <div class="flex items-center">
+          <a class="btn btn-ghost text-xl mr-4">{title}</a>
+          <ul class="menu menu-horizontal px-1">
+            <li><a>Link</a></li>
+            <li>
+              <details>
+                <summary>Parent</summary>
+                <ul class="bg-base-100 rounded-t-none p-2">
+                  <li><a>Link 1</a></li>
+                  <li><a>Link 2</a></li>
+                </ul>
+              </details>
+            </li>
+          </ul>
+        </div>
       </div>
-    </header>
+    </div>
 
-    <main class="max-w-7xl mx-auto w-full p-4">
+    <!-- Main content; add top margin so content doesn't sit under the sticky navbar -->
+    <main class="max-w-7xl mx-auto w-full p-4 mt-6">
       <slot />
     </main>
   </body>
