@@ -1,2 +1,62 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* Navbar/menu: prefer a minimal underline-on-hover instead of the default boxed hover.
+   We explicitly neutralize background/box-shadow so daisyUI's boxed hover doesn't show. */
+.menu.menu-horizontal a,
+.menu a {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  text-decoration: none;
+  /* no position here — the underline will be positioned relative to an inline span inside the link */
+  color: inherit;
+}
+
+/* Wrap link text in a span (in your markup) and use the span as the positioned element:
+   <a href="#"><span>Link</span></a>
+*/
+.menu a > span {
+  position: relative;
+  display: inline-block;
+}
+
+/* Underline applied to the span inside the link so it only spans the text width */
+.menu a > span::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 1px; /* thin, subtle underline */
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .08s ease-out, opacity .08s ease-out; /* faster, subtle */
+  opacity: 0.55; /* subtle baseline */
+  pointer-events: none;
+}
+
+/* Trigger the span underline on link hover/focus/active */
+.menu a:hover > span::after,
+.menu a:focus > span::after,
+.menu a:active > span::after,
+.menu a:focus-visible > span::after,
+.menu .active a > span::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+/* Ensure details/summary submenu respects the same minimal styling */
+.menu details summary {
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-decoration: none;
+}
+
+/* Submenu items */
+.menu details ul a {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
