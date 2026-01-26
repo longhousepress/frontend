@@ -7,33 +7,79 @@
     - author: string
     - price: string (optional)
     - img: string (optional) - path or URL to the cover image
+    - href: string (optional) - if provided, the whole card becomes a link
     - sizeClasses: string (optional) - Tailwind width classes to control sizing
 
-  Example:
-    <BookCard title="1984" author="George Orwell" price="£4.99" img="/cover080-cropped.jpg" />
+  Usage:
+    <BookCard
+      title="1984"
+      author="George Orwell"
+      price="£4.99"
+      img="/cover080-cropped.jpg"
+      href="/books/1984"
+      sizeClasses="w-36 sm:w-44 md:w-52 lg:w-60"
+    />
 */
 const {
   title = "Book Title",
   author = "Author Name",
   price = "",
   img = "/cover080-cropped.jpg",
+  href = null,
   sizeClasses = "w-36 sm:w-44 md:w-52 lg:w-60",
 } = Astro.props;
 ---
-<article class={`card bg-base-100 ${sizeClasses} shadow-lg hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1 hover:scale-105 relative`}>
-  <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-sm">
-    <img
-      src={img}
-      alt={`Cover of ${title} by ${author}`}
-      class="w-full h-full object-contain"
-      loading="lazy"
-    />
-  </figure>
+<article
+  class={`card bg-base-100 ${sizeClasses} shadow-lg hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1 hover:scale-105 relative rounded-lg`}
+  aria-label={`Book: ${title} by ${author}`}
+>
+  {href ? (
+    <a
+      href={href}
+      class="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
+      aria-label={`View details for ${title} by ${author}`}
+    >
+      <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
+        <img
+          src={img}
+          alt={`Cover of ${title} by ${author}`}
+          class="w-full h-full object-contain"
+          loading="lazy"
+        />
+      </figure>
 
-  <div class="card-body pb-12">
-    <h3 class="text-sm text-gray-600">{author}</h3>
-    <h2 class="card-title text-base leading-tight">{title}</h2>
-  </div>
+      <div class="card-body pb-12">
+        <h3 class="text-sm text-gray-600">{author}</h3>
+        <h2 class="card-title text-base leading-tight">{title}</h2>
+      </div>
 
-  {price && <span class="absolute bottom-3 right-3 text-sm font-medium">{price}</span>}
+      {price && (
+        <span class="absolute bottom-3 right-3 text-sm font-medium" aria-hidden="true">
+          {price}
+        </span>
+      )}
+    </a>
+  ) : (
+    <div class="block rounded-lg">
+      <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
+        <img
+          src={img}
+          alt={`Cover of ${title} by ${author}`}
+          class="w-full h-full object-contain"
+          loading="lazy"
+        />
+      </figure>
+
+      <div class="card-body pb-12">
+        <h3 class="text-sm text-gray-600">{author}</h3>
+        <h2 class="card-title text-base leading-tight">{title}</h2>
+      </div>
+
+      {price && (
+        <span class="absolute bottom-3 right-3 text-sm font-medium" aria-hidden="true">
+          {price}
+        </span>
+      )}
+    </div>
+  )}
 </article>

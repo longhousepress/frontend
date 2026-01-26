@@ -1,19 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
-
-const books = [
-  { title: 'Pride and Prejudice', author: 'Jane Austen', price: '£2.99', img: '/cover003.jpg' },
-  { title: 'Moby Dick', author: 'Herman Melville', price: '£3.50', img: '/cover008.jpg' },
-  { title: 'Frankenstein', author: 'Mary Shelley', price: '£2.50', img: '/cover013.jpg' },
-  { title: 'The Odyssey', author: 'Homer', price: '£3.75', img: '/cover019.jpg' },
-  { title: 'Little Women', author: 'Louisa May Alcott', price: '£2.25', img: '/cover020.jpg' },
-  { title: 'Dracula', author: 'Bram Stoker', price: '£2.80', img: '/cover023.jpg' },
-  { title: 'Great Expectations', author: 'Charles Dickens', price: '£3.10', img: '/cover030.jpg' },
-  { title: 'Selected Poems', author: 'Various', price: '£1.99', img: '/cover080-cropped.jpg' },
-  { title: 'Walden', author: 'Henry David Thoreau', price: '£2.40', img: '/cover050.jpg' },
-  { title: 'Leaves of Grass', author: 'Walt Whitman', price: '£3.00', img: '/cover052.jpg' },
-];
 ---
 
 <BaseLayout title="Catalog">
@@ -26,9 +13,16 @@ const books = [
     <div class="max-w-7xl mx-auto">
       <!-- Centered responsive grid. Cards are centered inside each grid cell. -->
       <div class="grid gap-8 justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {books.map((book) => (
-          <BookCard title={book.title} author={book.author} price={book.price} img={book.img} />
-        ))}
+        <BookCard title="Pride and Prejudice" author="Jane Austen" price="£2.99" img="/cover003.jpg" />
+        <BookCard title="Moby Dick" author="Herman Melville" price="£3.50" img="/cover008.jpg" />
+        <BookCard title="Frankenstein" author="Mary Shelley" price="£2.50" img="/cover013.jpg" />
+        <BookCard title="The Odyssey" author="Homer" price="£3.75" img="/cover019.jpg" />
+        <BookCard title="Little Women" author="Louisa May Alcott" price="£2.25" img="/cover020.jpg" />
+        <BookCard title="Dracula" author="Bram Stoker" price="£2.80" img="/cover023.jpg" />
+        <BookCard title="Great Expectations" author="Charles Dickens" price="£3.10" img="/cover030.jpg" />
+        <BookCard title="Selected Poems" author="Various" price="£1.99" img="/cover080-cropped.jpg" />
+        <BookCard title="Walden" author="Henry David Thoreau" price="£2.40" img="/cover050.jpg" />
+        <BookCard title="Leaves of Grass" author="Walt Whitman" price="£3.00" img="/cover052.jpg" />
       </div>
     </div>
   </div>
