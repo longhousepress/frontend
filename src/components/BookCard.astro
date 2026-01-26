@@ -30,7 +30,8 @@ const {
 } = Astro.props;
 ---
 <article
-  class={`card bg-base-100 ${sizeClasses} shadow-lg hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1 hover:scale-105 relative rounded-lg`}
+  class={`card bg-base-100 ${sizeClasses} shadow-2xl hover:shadow-2xl transition-all duration-75 transform hover:-translate-y-3 relative rounded-lg border-2 border-base-300`}
+  style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);"
   aria-label={`Book: ${title} by ${author}`}
 >
   {href ? (
