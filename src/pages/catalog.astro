@@ -10,9 +10,10 @@ import BookCard from '../components/BookCard.astro';
         <h2 class="text-2xl font-semibold">Catalog</h2>
       </div>
       
-      <label class="floating-label sm:min-w-64">
-        <input type="text" placeholder="Search books..." class="input input-sm" />
+      <label class="floating-label sm:min-w-64 relative">
+        <input type="text" placeholder="Search books..." class="input input-sm pr-10" />
         <span>Search</span>
+        <kbd class="kbd kbd-sm absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">/</kbd>
       </label>
     </div>
 
