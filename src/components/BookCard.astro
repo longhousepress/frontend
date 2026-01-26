@@ -1,0 +1,39 @@
+---
+/*
+  BookCard.astro
+
+  Props:
+    - title: string
+    - author: string
+    - price: string (optional)
+    - img: string (optional) - path or URL to the cover image
+    - sizeClasses: string (optional) - Tailwind width classes to control sizing
+
+  Example:
+    <BookCard title="1984" author="George Orwell" price="£4.99" img="/cover080-cropped.jpg" />
+*/
+const {
+  title = "Book Title",
+  author = "Author Name",
+  price = "",
+  img = "/cover080-cropped.jpg",
+  sizeClasses = "w-36 sm:w-44 md:w-52 lg:w-60",
+} = Astro.props;
+---
+<article class={`card bg-base-100 ${sizeClasses} shadow-lg hover:shadow-2xl transition-shadow duration-300 transform hover:-translate-y-1 hover:scale-105 relative`}>
+  <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-sm">
+    <img
+      src={img}
+      alt={`Cover of ${title} by ${author}`}
+      class="w-full h-full object-contain"
+      loading="lazy"
+    />
+  </figure>
+
+  <div class="card-body pb-12">
+    <h3 class="text-sm text-gray-600">{author}</h3>
+    <h2 class="card-title text-base leading-tight">{title}</h2>
+  </div>
+
+  {price && <span class="absolute bottom-3 right-3 text-sm font-medium">{price}</span>}
+</article>
