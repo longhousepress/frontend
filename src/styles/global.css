@@ -64,6 +64,15 @@
 }
 
 /* Subtle focus styling for search input */
+.floating-label {
+  box-sizing: border-box;
+}
+
+.floating-label input {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
 .floating-label input:focus {
   outline: none;
   border-color: oklch(var(--p) / 0.5);
