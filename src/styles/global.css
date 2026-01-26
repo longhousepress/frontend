@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: autumn --default, dracula --prefersdark;
+}
 
 /* Navbar/menu: prefer a minimal underline-on-hover instead of the default boxed hover.
    We explicitly neutralize background/box-shadow so daisyUI's boxed hover doesn't show. */
