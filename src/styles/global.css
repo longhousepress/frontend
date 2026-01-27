@@ -32,7 +32,7 @@
   bottom: -1px;
   height: 1px; /* thin, subtle underline */
   width: 100%;
-  background: currentColor;
+  background: oklch(var(--p));
   transform: scaleX(0);
   transform-origin: center;
   transition: transform .08s ease-out, opacity .08s ease-out; /* faster, subtle */
