@@ -62,11 +62,172 @@ const formatPrice = (price: number) => {
 </BaseLayout>
 
 <!-- Search Keyboard Shortcuts: / to focus, Esc to blur -->
-<script src="../scripts/search.js"></script>
+<script>
+  // Search keyboard shortcut - Press '/' to focus the search input
+  const searchInput = document.querySelector('input[type="text"][placeholder*="Search"]');
+  const searchKbd = document.getElementById('search-kbd');
+
+  // Toggle kbd text on focus/blur
+  searchInput?.addEventListener('focus', () => {
+    if (searchKbd) searchKbd.textContent = 'Esc';
+  });
+
+  searchInput?.addEventListener('blur', () => {
+    if (searchKbd) searchKbd.textContent = '/';
+  });
+
+  document.addEventListener('keydown', (e) => {
+    // Check if '/' is pressed and we're not already in an input/textarea
+    if (e.key === '/' && document.activeElement && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+      e.preventDefault();
+      (searchInput as HTMLInputElement)?.focus();
+    }
+    
+    // Check if 'Escape' is pressed and we're in the search input
+    if (e.key === 'Escape' && document.activeElement === searchInput) {
+      (searchInput as HTMLInputElement)?.blur();
+    }
+  });
+</script>
 
 <!-- Catalog Functionality: Search, Filter, Pagination -->
-<script src="../scripts/catalog.js"></script>
 <script define:vars={{ books }}>
-  // Initialize catalog with books data from server
-  window.initializeCatalog(books);
+  // Configuration
+  const ITEMS_PER_PAGE = 10;
+
+  // State
+  let currentPage = 1;
+  let filteredBooks = books;
+  let allBooks = books;
+
+  // Utility function
+  function formatPrice(price) {
+    return `£${(price / 100).toFixed(2)}`;
+  }
+
+  // Render books to the grid
+  function renderBooks() {
+    const booksGrid = document.getElementById('books-grid');
+    const noResults = document.getElementById('no-results');
+    
+    if (!booksGrid || !noResults) return;
+    
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    const paginatedBooks = filteredBooks.slice(start, end);
+
+    if (filteredBooks.length === 0) {
+      booksGrid.classList.add('hidden');
+      noResults.classList.remove('hidden');
+    } else {
+      booksGrid.classList.remove('hidden');
+      noResults.classList.add('hidden');
+      
+      booksGrid.innerHTML = paginatedBooks.map(book => `
+        <article
+          class="card bg-base-100 w-full shadow-2xl hover:shadow-2xl transition-all duration-75 transform hover:-translate-y-3 relative rounded-lg border-2 border-base-300"
+          style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);"
+          aria-label="Book: ${book.title} by ${book.author}"
+        >
+          <a
+            href="/books/${book.book_slug}"
+            class="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
+            aria-label="View details for ${book.title} by ${book.author}"
+          >
+            <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
+              <img
+                src="${book.cover}"
+                alt="Cover of ${book.title} by ${book.author}"
+                class="w-full h-full object-contain"
+                loading="lazy"
+              />
+            </figure>
+
+            <div class="card-body pb-12">
+              <h3 class="text-sm opacity-70" style="color: var(--color-base-content);">${book.author}</h3>
+              <h2 class="card-title text-base leading-tight text-base-content">${book.title}</h2>
+            </div>
+
+            <span class="absolute bottom-3 right-3 text-sm font-medium text-primary" aria-hidden="true">
+              ${formatPrice(book.price)}
+            </span>
+          </a>
+        </article>
+      `).join('');
+    }
+
+    updatePagination();
+  }
+
+  // Update pagination controls
+  function updatePagination() {
+    const prevBtn = document.getElementById('prev-page');
+    const nextBtn = document.getElementById('next-page');
+    const pageInfo = document.getElementById('page-info');
+    const paginationContainer = document.getElementById('pagination');
+    
+    if (!pageInfo || !prevBtn || !nextBtn) return;
+    
+    const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE) || 1;
+    
+    if (totalPages <= 1) {
+      paginationContainer?.classList.add('hidden');
+      return;
+    }
+    
+    paginationContainer?.classList.remove('hidden');
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage >= totalPages;
+    
+    prevBtn.classList.toggle('btn-disabled', prevBtn.disabled);
+    nextBtn.classList.toggle('btn-disabled', nextBtn.disabled);
+  }
+
+  // Handle search input
+  function handleSearch(query) {
+    const searchTerm = query.toLowerCase().trim();
+    
+    filteredBooks = searchTerm
+      ? allBooks.filter(book => 
+          book.title.toLowerCase().includes(searchTerm) ||
+          book.author.toLowerCase().includes(searchTerm)
+        )
+      : allBooks;
+    
+    currentPage = 1;
+    renderBooks();
+  }
+
+  // Initialize on page load
+  const searchInputEl = document.getElementById('search-input');
+  const prevBtn = document.getElementById('prev-page');
+  const nextBtn = document.getElementById('next-page');
+
+  if (searchInputEl && prevBtn && nextBtn) {
+    // Search input handler
+    searchInputEl.addEventListener('input', (e) => handleSearch(e.target.value));
+
+    // Pagination handlers
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderBooks();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderBooks();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+
+    // Initial render
+    renderBooks();
+  }
 </script>
