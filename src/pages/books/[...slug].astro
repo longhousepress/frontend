@@ -35,8 +35,8 @@ const formatPrice = (price: number) => {
     <div class="grid sm:grid-cols-2 gap-8 mb-8">
       <!-- Left column: Cover image -->
       <div class="flex justify-center sm:justify-start">
-        <img 
-          src={book.cover} 
+        <img
+          src={book.cover}
           alt={`Cover of ${book.title} by ${book.author}`}
           class="rounded-lg shadow-2xl"
           style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
@@ -46,7 +46,7 @@ const formatPrice = (price: number) => {
       <!-- Right column: Book details (flex layout with description in middle, buy button at bottom) -->
       <div class="flex flex-col" style="height: calc(320px * 9 / 6);">
         <!-- Top section: Title & Author -->
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <details class="metadata-details mb-4">
             <summary class="flex items-center gap-2 cursor-pointer list-none mb-4">
               <h1 class="font-bold">{book.title}</h1>
@@ -118,10 +118,10 @@ const formatPrice = (price: number) => {
             <p class="opacity-70 mb-6">by {book.author}</p>
           )}
         </div>
-        
+
         <!-- Middle section: Scrollable description (flexes to fill space) -->
         <div class="flex-1 mb-6 relative overflow-hidden" id="description-wrapper">
-          <div class="h-full overflow-y-auto pr-2 description-scroll relative" id="description-container" style="z-index: 1;">
+          <div class="h-full overflow-y-auto pr-2 description-scroll relative" id="description-container">
             {book.description && (
               <div class="mb-6">
                 <p class="text-sm leading-relaxed opacity-80">{book.description}</p>
@@ -139,18 +139,33 @@ const formatPrice = (price: number) => {
         </div>
 
         <!-- Bottom section: Purchase info (pinned to bottom, aligned with cover) -->
-        <div class="flex-shrink-0">
-          <!-- Price and Format -->
-          <div class="flex items-baseline gap-3 mb-6">
-            <div class="text-5xl font-bold text-primary">
-              {formatPrice(book.price)}
+        <div class="shrink-0">
+          <!-- Format buttons and Price - 2 column grid -->
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <!-- Left column: Format buttons -->
+            <div class="flex gap-2 items-center">
+              <button class="btn btn-outline btn-sm">eBook</button>
+              <div class="custom-tooltip">
+                <button class="btn btn-dash btn-sm" disabled>Paperback</button>
+                <span class="tooltip-text">Not currently available</span>
+              </div>
+              <div class="custom-tooltip">
+                <button class="btn btn-dash btn-sm" disabled>Hardcover</button>
+                <span class="tooltip-text">Not currently available</span>
+              </div>
             </div>
-            <span class="badge badge-outline badge-lg">{book.format}</span>
+
+            <!-- Right column: Price -->
+            <div class="flex items-center justify-end">
+              <div class="text-2xl leading-8 font-bold text-primary">
+                {formatPrice(book.price)}
+              </div>
+            </div>
           </div>
 
           <!-- Buy button -->
           <button class="btn btn-primary btn-lg btn-block">
-            Buy Now
+            Buy
           </button>
         </div>
       </div>
@@ -185,6 +200,45 @@ const formatPrice = (price: number) => {
     .metadata-details summary::-webkit-details-marker,
     .author-details summary::-webkit-details-marker {
       display: none;
+    }
+
+    /* Scroll container stacking */
+    .description-scroll {
+      z-index: 1;
+    }
+
+    /* Custom tooltip */
+    .custom-tooltip {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .custom-tooltip .tooltip-text {
+      visibility: hidden;
+      opacity: 0;
+      background-color: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      text-align: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+
+      /* Position below button */
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 4px;
+      z-index: 20;
+
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .custom-tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
     }
   </style>
 
