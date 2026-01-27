@@ -1,5 +1,6 @@
 @import "tailwindcss";
 /* stylelint-disable-next-line at-rule-no-unknown */
+@plugin "daisyui";
 @plugin "daisyui" {
   themes: autumn --default, dracula --prefersdark;
 }
@@ -136,5 +137,3 @@
   opacity: 0.6;
   pointer-events: auto;
 }
-
-
