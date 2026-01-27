@@ -1,9 +1,19 @@
 // Search keyboard shortcut
 // Press '/' to focus the search input
 
+const searchInput = document.querySelector('input[type="text"][placeholder*="Search"]');
+const searchKbd = document.getElementById('search-kbd');
+
+// Toggle kbd text on focus/blur
+searchInput?.addEventListener('focus', () => {
+  if (searchKbd) searchKbd.textContent = 'Esc';
+});
+
+searchInput?.addEventListener('blur', () => {
+  if (searchKbd) searchKbd.textContent = '/';
+});
+
 document.addEventListener('keydown', (e) => {
-  const searchInput = document.querySelector('input[type="text"][placeholder*="Search"]');
-  
   // Check if '/' is pressed and we're not already in an input/textarea
   if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
     e.preventDefault();
