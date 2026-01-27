@@ -72,11 +72,25 @@ function updatePagination() {
   if (!pageInfo || !prevBtn || !nextBtn) return;
   
   const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE) || 1;
+  const paginationContainer = document.getElementById('pagination');
+  
+  // Hide pagination if only 1 page
+  if (totalPages <= 1) {
+    if (paginationContainer) {
+      paginationContainer.classList.add('hidden');
+    }
+    return;
+  }
+  
+  // Show pagination if more than 1 page
+  if (paginationContainer) {
+    paginationContainer.classList.remove('hidden');
+  }
   
   pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
   
   prevBtn.disabled = currentPage === 1;
-  nextBtn.disabled = currentPage >= totalPages || filteredBooks.length === 0;
+  nextBtn.disabled = currentPage >= totalPages;
   
   if (prevBtn.disabled) {
     prevBtn.classList.add('btn-disabled');
