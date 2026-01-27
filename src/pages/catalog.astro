@@ -2,9 +2,9 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 
-// Fetch books from API at build time
+// Fetch books from API at build time (default to English editions)
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
-const response = await fetch(`${API_URL}/api/books`);
+const response = await fetch(`${API_URL}/api/books?lang=eng`);
 const books = await response.json();
 
 // Format price helper for server-side rendering (500 -> £5.00)
@@ -30,13 +30,13 @@ const formatPrice = (price: number) => {
     <div class="max-w-7xl mx-auto">
       <!-- Centered responsive grid. Cards are centered inside each grid cell. -->
       <div id="books-grid" class="grid gap-8 justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {books.map((book: any) => (
+        {books.map((edition: any) => (
           <BookCard 
-            title={book.title} 
-            author={book.author} 
-            price={formatPrice(book.price)} 
-            img={book.cover}
-            href={`/books/${book.slug}`}
+            title={edition.title} 
+            author={edition.author} 
+            price={formatPrice(edition.price)} 
+            img={edition.cover}
+            href={`/books/${edition.book_slug}`}
           />
         ))}
       </div>
