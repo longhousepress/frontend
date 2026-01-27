@@ -30,7 +30,7 @@ const {
 } = Astro.props;
 ---
 <article
-  class={`card bg-base-100 ${sizeClasses} shadow-2xl hover:shadow-2xl transition-all duration-75 transform hover:-translate-y-3 relative rounded-lg border-2 border-base-300`}
+  class={`group card bg-base-100 ${sizeClasses} shadow-sm hover:shadow-md transition-shadow duration-150 relative rounded-lg border-2 border-base-300`}
   style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);"
   aria-label={`Book: ${title} by ${author}`}
 >
@@ -44,7 +44,7 @@ const {
         <img
           src={img}
           alt={`Cover of ${title} by ${author}`}
-          class="w-full h-full object-contain"
+          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
           loading="lazy"
         />
       </figure>
@@ -66,7 +66,7 @@ const {
         <img
           src={img}
           alt={`Cover of ${title} by ${author}`}
-          class="w-full h-full object-contain"
+          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
           loading="lazy"
         />
       </figure>

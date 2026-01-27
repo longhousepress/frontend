@@ -124,23 +124,10 @@ const formatPrice = (price: number) => {
       noResults.classList.add('hidden');
       
       booksGrid.innerHTML = paginatedBooks.map(book => `
-        <article
-          class="card bg-base-100 w-full shadow-2xl hover:shadow-2xl transition-all duration-75 transform hover:-translate-y-3 relative rounded-lg border-2 border-base-300"
-          style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);"
-          aria-label="Book: ${book.title} by ${book.author}"
-        >
-          <a
-            href="/books/${book.book_slug}"
-            class="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
-            aria-label="View details for ${book.title} by ${book.author}"
-          >
+        <article class="card bg-base-100 w-full shadow-sm hover:shadow-md transition-shadow duration-150 relative rounded-lg border-2 border-base-300" style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);" aria-label="Book: ${book.title} by ${book.author}">
+          <a href="/books/${book.book_slug}" class="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg" aria-label="View details for ${book.title} by ${book.author}">
             <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
-              <img
-                src="${book.cover}"
-                alt="Cover of ${book.title} by ${book.author}"
-                class="w-full h-full object-contain"
-                loading="lazy"
-              />
+              <img src="${book.cover}" alt="Cover of ${book.title} by ${book.author}" class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75" loading="lazy" />
             </figure>
 
             <div class="card-body pb-12">
