@@ -53,7 +53,7 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
                   />
                 </div>
 
-                <div class="flex flex-1 flex-col">
+                <div class="flex flex-1 flex-col justify-between">
                   <div>
                     <div class="flex justify-between text-base font-medium text-base-content">
                       <h3>
@@ -61,21 +61,21 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
                           {book.title}
                         </a>
                       </h3>
-                      <p class="ml-4">{formatPrice(book.price)}</p>
+                      <p class="ml-4 item-price">{formatPrice(book.price)}</p>
                     </div>
                     <p class="mt-1 text-sm opacity-70">{book.author}</p>
                     <p class="mt-1 text-sm opacity-70">{book.edition.format || 'eBook'}</p>
                     <p class="mt-1 text-sm opacity-70">{book.edition.language || 'English'}</p>
                   </div>
-                  <div class="flex flex-1 items-end justify-between text-sm">
-                    <div class="flex items-center gap-2">
-                      <button class="btn btn-xs">-</button>
-                      <input type="text" value="1" class="input input-xs w-12 text-center" />
-                      <button class="btn btn-xs">+</button>
+                  <div class="flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-1">
+                      <button class="btn btn-xs min-h-0 h-6 qty-decrease">-</button>
+                      <input type="text" inputmode="numeric" pattern="[0-9]*" value="1" class="input input-xs w-12 h-6 min-h-0 text-center py-0 qty-input" data-price={book.price} />
+                      <button class="btn btn-xs min-h-0 h-6 qty-increase">+</button>
                     </div>
 
                     <div class="flex">
-                      <button type="button" class="font-medium text-primary hover:text-primary-focus transition-colors">
+                      <button type="button" class="font-medium text-primary hover:text-primary-focus transition-colors remove-item">
                         Remove
                       </button>
                     </div>
@@ -85,17 +85,23 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
             ))}
           </ul>
         </div>
+
+        <!-- Empty cart message (hidden by default) -->
+        <div id="empty-cart" class="hidden text-center py-12">
+          <p class="text-lg opacity-70">Your cart is empty.</p>
+          <a href="/catalog" class="btn btn-primary mt-4">Browse Books</a>
+        </div>
       </div>
 
-      <div class="border-t border-base-300 px-4 py-6 sm:px-6">
+      <div class="border-t border-base-300 px-4 py-6 sm:px-6" id="cart-footer">
         <div class="flex justify-between text-base font-medium text-base-content mb-2">
           <p>Subtotal</p>
-          <p>{formatPrice(subtotal)}</p>
+          <p id="subtotal-amount">{formatPrice(subtotal)}</p>
         </div>
         <p class="mt-0.5 text-sm opacity-70">Shipping and taxes calculated at checkout.</p>
         
         <div class="mt-6">
-          <button class="btn btn-primary btn-block">
+          <button class="btn btn-primary btn-block" id="checkout-btn">
             Checkout
           </button>
         </div>
@@ -112,4 +118,129 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
       </div>
     </div>
   </div>
+
+  <script>
+    // Format price helper (500 -> £5.00)
+    function formatPrice(price: number): string {
+      return `£${(price / 100).toFixed(2)}`;
+    }
+
+    // Calculate and update subtotal
+    function updateSubtotal() {
+      const cartItems = document.querySelectorAll('ul[role="list"] > li');
+      let total = 0;
+
+      cartItems.forEach((item) => {
+        if (!item.classList.contains('hidden')) {
+          const qtyInput = item.querySelector('.qty-input') as HTMLInputElement;
+          const price = parseInt(qtyInput.dataset.price || '0');
+          const quantity = parseInt(qtyInput.value);
+          total += price * quantity;
+          
+          // Update item price display with quantity multiplier
+          const priceEl = item.querySelector('.item-price');
+          if (priceEl) {
+            if (quantity > 1) {
+              priceEl.textContent = `${quantity}× ${formatPrice(price)}`;
+            } else {
+              priceEl.textContent = formatPrice(price);
+            }
+          }
+        }
+      });
+
+      const subtotalEl = document.getElementById('subtotal-amount');
+      if (subtotalEl) {
+        subtotalEl.textContent = formatPrice(total);
+      }
+
+      // Check if cart is empty
+      const visibleItems = Array.from(cartItems).filter(item => !item.classList.contains('hidden'));
+      const emptyCart = document.getElementById('empty-cart');
+      const cartFooter = document.getElementById('cart-footer');
+      
+      if (visibleItems.length === 0) {
+        emptyCart?.classList.remove('hidden');
+        cartFooter?.classList.add('hidden');
+      }
+    }
+
+    // Handle quantity increase
+    document.querySelectorAll('.qty-increase').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const input = btn.previousElementSibling as HTMLInputElement;
+        const currentQty = parseInt(input.value) || 1;
+        input.value = String(currentQty + 1);
+        updateSubtotal();
+      });
+    });
+
+    // Handle quantity decrease
+    document.querySelectorAll('.qty-decrease').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const input = btn.nextElementSibling as HTMLInputElement;
+        const currentQty = parseInt(input.value) || 1;
+        if (currentQty > 1) {
+          input.value = String(currentQty - 1);
+          updateSubtotal();
+        }
+      });
+    });
+
+    // Auto-select value on focus for better UX
+    document.querySelectorAll('.qty-input').forEach((input) => {
+      input.addEventListener('focus', () => {
+        const inputEl = input as HTMLInputElement;
+        inputEl.select();
+      });
+      
+      input.addEventListener('input', () => {
+        const inputEl = input as HTMLInputElement;
+        let value = inputEl.value;
+        
+        // Remove any non-digit characters
+        value = value.replace(/[^0-9]/g, '');
+        
+        // Allow empty during input (will be fixed on blur)
+        inputEl.value = value;
+        
+        // Update subtotal with current value or treat empty as 1
+        const numValue = parseInt(value) || 1;
+        
+        // Temporarily update for calculation
+        const originalValue = inputEl.value;
+        inputEl.value = String(numValue);
+        updateSubtotal();
+        inputEl.value = originalValue;
+      });
+      
+      // Also validate on blur to catch edge cases
+      input.addEventListener('blur', () => {
+        const inputEl = input as HTMLInputElement;
+        const value = parseInt(inputEl.value);
+        
+        if (isNaN(value) || value < 1 || inputEl.value === '') {
+          inputEl.value = '1';
+          updateSubtotal();
+        }
+      });
+    });
+
+    // Handle remove item
+    document.querySelectorAll('.remove-item').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const listItem = btn.closest('li');
+        if (listItem) {
+          listItem.classList.add('hidden');
+          updateSubtotal();
+        }
+      });
+    });
+
+    // Handle checkout button
+    const checkoutBtn = document.getElementById('checkout-btn');
+    checkoutBtn?.addEventListener('click', () => {
+      alert('Checkout is not supported yet. Stay tuned!');
+    });
+  </script>
 </BaseLayout>
