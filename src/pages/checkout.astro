@@ -33,7 +33,7 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
 ---
 
 <BaseLayout title="Shopping Cart">
-  <div class="max-w-2xl mx-auto py-6">
+  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL}>
     <div class="flex h-full flex-col bg-base-100">
       <div class="flex-1 px-4 py-6 sm:px-6">
         <div class="flex items-start justify-between mb-8">
@@ -69,10 +69,10 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
                   </div>
                   <div class="flex items-center justify-between text-sm">
                     <div class="flex items-center gap-1">
-                      <button class="btn btn-xs min-h-0 h-6 qty-decrease">-</button>
-                      <input type="text" inputmode="numeric" pattern="[0-9]*" value="1" class="input input-xs w-12 h-6 min-h-0 text-center py-0 qty-input" data-price={book.price} />
-                      <button class="btn btn-xs min-h-0 h-6 qty-increase">+</button>
-                    </div>
+                        <button class="btn btn-xs min-h-0 h-6 qty-decrease">-</button>
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" value="1" class="input input-xs w-12 h-6 min-h-0 text-center py-0 qty-input" data-price={book.price} data-edition-id={book.edition.id} />
+                        <button class="btn btn-xs min-h-0 h-6 qty-increase">+</button>
+                      </div>
 
                     <div class="flex">
                       <button type="button" class="font-medium text-primary hover:text-primary-focus transition-colors remove-item">
@@ -239,8 +239,60 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
 
     // Handle checkout button
     const checkoutBtn = document.getElementById('checkout-btn');
-    checkoutBtn?.addEventListener('click', () => {
-      alert('Checkout is not supported yet. Stay tuned!');
+    checkoutBtn?.addEventListener('click', async () => {
+      // Collect visible items with edition id and quantity
+      const cartItems = Array.from(document.querySelectorAll('ul[role="list"] > li'))
+        .filter(li => !li.classList.contains('hidden'));
+
+      const items = cartItems.map(li => {
+        const qtyInput = li.querySelector('.qty-input') as HTMLInputElement | null;
+        const editionId = qtyInput?.dataset?.editionId ?? null;
+        const quantity = qtyInput ? parseInt(qtyInput.value || '1', 10) : 1;
+        return {
+          edition_id: editionId,
+          quantity: quantity
+        };
+      }).filter(item => item.edition_id);
+
+      if (items.length === 0) {
+        alert('Your cart is empty.');
+        return;
+      }
+
+      const payload = { items };
+
+      try {
+        // Disable button to prevent duplicate submits
+        checkoutBtn.setAttribute('disabled', 'true');
+
+        const apiUrl = (document.querySelector('[data-api-url]') as HTMLElement | null)?.dataset?.apiUrl || '';
+        const resp = await fetch(`${apiUrl}/api/checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await resp.json().catch(() => ({}));
+
+        if (!resp.ok) {
+          alert(data?.message || `Checkout failed (${resp.status})`);
+          console.error('Checkout error response:', data);
+          return;
+        }
+
+        // Expect backend to return CheckoutSession { url: String }
+        if (data && data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('Checkout session not returned by server.');
+          console.error('Unexpected checkout response:', data);
+        }
+      } catch (err) {
+        console.error('Network error during checkout', err);
+        alert('Network error during checkout. Please try again.');
+      } finally {
+        checkoutBtn.removeAttribute('disabled');
+      }
     });
   </script>
 </BaseLayout>
