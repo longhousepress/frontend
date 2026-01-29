@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Fetch 2 random books from the API
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const response = await fetch(`${API_URL}/api/books?lang=eng`);
+const allBooks = await response.json();
+
+// Get 2 random books
+const shuffled = [...allBooks].sort(() => 0.5 - Math.random());
+const cartBooks = shuffled.slice(0, 2);
+
+// Fetch full details for each book
+const booksWithDetails = await Promise.all(
+  cartBooks.map(async (book: any) => {
+    const detailResponse = await fetch(`${API_URL}/api/books/${book.book_slug}`);
+    const bookData = await detailResponse.json();
+    return {
+      ...book,
+      details: bookData,
+      edition: bookData.editions[0]
+    };
+  })
+);
+
+// Format price helper (500 -> £5.00)
+const formatPrice = (price: number) => {
+  return `£${(price / 100).toFixed(2)}`;
+};
+
+// Calculate subtotal
+const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
+---
+
+<BaseLayout title="Shopping Cart">
+  <div class="max-w-2xl mx-auto py-6">
+    <div class="flex h-full flex-col bg-base-100">
+      <div class="flex-1 px-4 py-6 sm:px-6">
+        <div class="flex items-start justify-between mb-8">
+          <h1 class="text-2xl font-bold text-base-content">Shopping cart</h1>
+        </div>
+
+        <div class="flow-root">
+          <ul role="list" class="divide-y divide-base-300">
+            {booksWithDetails.map((book) => (
+              <li class="flex py-6 gap-4">
+                <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
+                  <img 
+                    src={book.edition.cover} 
+                    alt={`Cover of ${book.title} by ${book.author}`}
+                    class="object-cover"
+                    style="width: 96px; height: 144px;"
+                  />
+                </div>
+
+                <div class="flex flex-1 flex-col">
+                  <div>
+                    <div class="flex justify-between text-base font-medium text-base-content">
+                      <h3>
+                        <a href={`/books/${book.book_slug}`} class="hover:text-primary transition-colors">
+                          {book.title}
+                        </a>
+                      </h3>
+                      <p class="ml-4">{formatPrice(book.price)}</p>
+                    </div>
+                    <p class="mt-1 text-sm opacity-70">{book.author}</p>
+                    <p class="mt-1 text-sm opacity-70">{book.edition.format || 'eBook'}</p>
+                    <p class="mt-1 text-sm opacity-70">{book.edition.language || 'English'}</p>
+                  </div>
+                  <div class="flex flex-1 items-end justify-between text-sm">
+                    <div class="flex items-center gap-2">
+                      <button class="btn btn-xs">-</button>
+                      <input type="text" value="1" class="input input-xs w-12 text-center" />
+                      <button class="btn btn-xs">+</button>
+                    </div>
+
+                    <div class="flex">
+                      <button type="button" class="font-medium text-primary hover:text-primary-focus transition-colors">
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-base-300 px-4 py-6 sm:px-6">
+        <div class="flex justify-between text-base font-medium text-base-content mb-2">
+          <p>Subtotal</p>
+          <p>{formatPrice(subtotal)}</p>
+        </div>
+        <p class="mt-0.5 text-sm opacity-70">Shipping and taxes calculated at checkout.</p>
+        
+        <div class="mt-6">
+          <button class="btn btn-primary btn-block">
+            Checkout
+          </button>
+        </div>
+        
+        <div class="mt-6 flex justify-center text-center text-sm opacity-70">
+          <p>
+            or
+            <a href="/catalog" class="font-medium text-primary hover:text-primary-focus ml-1">
+              Continue Shopping
+              <span aria-hidden="true"> →</span>
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
