@@ -1,6 +1,6 @@
 // Cart item structure
 export interface CartItem {
-  id: string;
+  id: number;
   title: string;
   price: number;
   quantity: number;
@@ -14,10 +14,22 @@ export interface CartItem {
 export class Cart {
   private static STORAGE_KEY = 'ebook-cart';
 
-  // Get all items
+  // Get all items (migrate legacy string ids -> numbers)
   static getItems(): CartItem[] {
     const stored = localStorage.getItem(this.STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored) return [];
+
+    try {
+      const parsed = JSON.parse(stored) as any[];
+      // Ensure id is numeric (migrate legacy string ids)
+      return parsed.map((it: any) => ({
+        ...it,
+        id: typeof it.id === 'string' ? Number(it.id) : it.id
+      })) as CartItem[];
+    } catch {
+      // On parse error, return empty cart to avoid crashes
+      return [];
+    }
   }
 
   // Save items
@@ -42,13 +54,13 @@ export class Cart {
   }
 
   // Remove item completely
-  static removeItem(id: string): void {
+  static removeItem(id: number): void {
     const items = this.getItems().filter(i => i.id !== id);
     this.saveItems(items);
   }
 
   // Update quantity
-  static updateQuantity(id: string, quantity: number): void {
+  static updateQuantity(id: number, quantity: number): void {
     const items = this.getItems();
     const item = items.find(i => i.id === id);
 

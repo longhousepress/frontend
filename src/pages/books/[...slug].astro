@@ -293,7 +293,7 @@ const formatPrice = (price: number) => {
 
     btn?.addEventListener('click', () => {
       Cart.addItem({
-        id: btn.dataset.bookId!,
+        id: Number(btn.dataset.bookId!),
         title: btn.dataset.bookTitle!,
         price: parseInt(btn.dataset.bookPrice!),
         cover: btn.dataset.bookCover,
