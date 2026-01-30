@@ -1,9 +1,29 @@
 ---
 import Layout from '../layouts/BaseLayout.astro';
+// server-side: we don’t have the query param yet, so don’t pre-flight
 ---
 
-<Layout title="Home">
-  <main>
-  	<p>Thanks for the money.</p>
-  </main>
+<Layout title="Thank you">
+  <main id="msg">Verifying…</main>
 </Layout>
+
+<script>
+  const params = new URLSearchParams(location?.search ?? '');
+  const token  = params.get('tok');
+  const origin = import.meta.env.PUBLIC_ORIGIN || 'http://localhost:8000';
+
+  const msgEl = document.getElementById('msg');
+  if (!msgEl) {
+    // If the message element is missing, nothing to update
+  } else if (!token) {
+    msgEl.textContent = 'Link expired or invalid.';
+  } else {
+    fetch(`${origin}/api/download/${token}`, {method:'HEAD'})
+      .then(r => {
+        msgEl.innerHTML = r.ok
+          ? `<p>Payment successful!</p>
+             <a href="${origin}/api/download/${token}" download>Download your file</a>`
+          : 'Link expired or invalid.';
+      });
+  }
+</script>
