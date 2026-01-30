@@ -1,24 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-// We can't access localStorage server-side, so we'll render the page
-// and let client-side JavaScript populate it with cart data
-
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
-// Format price helper (500 -> £5.00)
-const formatPrice = (price: number) => {
-  return `£${(price / 100).toFixed(2)}`;
-};
+const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 ---
 
 <BaseLayout title="Shopping Cart">
   <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL}>
     <div class="flex h-full flex-col bg-base-100">
+      <!-- Header -->
       <div class="flex-1 px-4 py-6 sm:px-6">
-        <div class="flex items-start justify-between mb-8">
-          <h1 class="text-2xl font-bold text-base-content">Shopping cart</h1>
-        </div>
+        <h1 class="text-2xl font-bold text-base-content mb-8">Shopping cart</h1>
 
         <!-- Loading state -->
         <div id="cart-loading" class="text-center py-12">
@@ -26,42 +19,34 @@ const formatPrice = (price: number) => {
           <p class="mt-4 opacity-70">Loading your cart...</p>
         </div>
 
-        <!-- Cart items will be inserted here -->
-        <div class="hidden" id="cart-items-container">
-          <ul role="list" class="divide-y divide-base-300" id="cart-items-list">
-            <!-- Items populated by JavaScript -->
-          </ul>
-        </div>
+        <!-- Cart items -->
+        <ul id="cart-items" class="hidden divide-y divide-base-300"></ul>
 
-        <!-- Empty cart message -->
+        <!-- Empty state -->
         <div id="empty-cart" class="hidden text-center py-12">
           <p class="text-lg opacity-70">Your cart is empty.</p>
           <a href="/catalog" class="btn btn-primary mt-4">Browse Books</a>
         </div>
       </div>
 
-      <div class="border-t border-base-300 px-4 py-6 sm:px-6 hidden" id="cart-footer">
-        <div class="flex justify-between text-base font-medium text-base-content mb-2">
+      <!-- Footer -->
+      <div id="cart-footer" class="hidden border-t border-base-300 px-4 py-6 sm:px-6">
+        <div class="flex justify-between text-base font-medium mb-2">
           <p>Subtotal</p>
-          <p id="subtotal-amount">£0.00</p>
+          <p id="subtotal">£0.00</p>
         </div>
-        <p class="mt-0.5 text-sm opacity-70">Shipping and taxes calculated at checkout.</p>
+        <p class="text-sm opacity-70">Shipping and taxes calculated at checkout.</p>
 
-        <div class="mt-6">
-          <button class="btn btn-primary btn-block" id="checkout-btn">
-            Checkout
-          </button>
-        </div>
+        <button id="checkout-btn" class="btn btn-primary btn-block mt-6">
+          Checkout
+        </button>
 
-        <div class="mt-6 flex justify-center text-center text-sm opacity-70">
-          <p>
-            or
-            <a href="/catalog" class="font-medium text-primary hover:text-primary-focus ml-1">
-              Continue Shopping
-              <span aria-hidden="true"> →</span>
-            </a>
-          </p>
-        </div>
+        <p class="mt-6 text-center text-sm opacity-70">
+          or
+          <a href="/catalog" class="font-medium text-primary hover:text-primary-focus ml-1">
+            Continue Shopping →
+          </a>
+        </p>
       </div>
     </div>
   </div>
@@ -69,206 +54,155 @@ const formatPrice = (price: number) => {
   <script>
     import { Cart } from '../lib/cart';
 
-    // Format price helper (500 -> £5.00)
-    function formatPrice(price: number): string {
-      return `£${(price / 100).toFixed(2)}`;
-    }
+    const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 
-    // Calculate and update subtotal
-    function updateSubtotal() {
-      const items = Cart.getItems();
-      const total = Cart.getTotal();
+    const elements = {
+      loading: document.getElementById('cart-loading')!,
+      items: document.getElementById('cart-items')!,
+      empty: document.getElementById('empty-cart')!,
+      footer: document.getElementById('cart-footer')!,
+      subtotal: document.getElementById('subtotal')!,
+      checkout: document.getElementById('checkout-btn') as HTMLButtonElement,
+    };
 
-      const subtotalEl = document.getElementById('subtotal-amount');
-      if (subtotalEl) {
-        subtotalEl.textContent = formatPrice(total);
-      }
-
-      // Update item price displays
-      items.forEach((item, index) => {
-        const priceEl = document.querySelector(`[data-item-index="${index}"] .item-price`);
-        if (priceEl) {
-          if (item.quantity > 1) {
-            priceEl.textContent = `${item.quantity}× ${formatPrice(item.price)}`;
-          } else {
-            priceEl.textContent = formatPrice(item.price);
-          }
-        }
-      });
-    }
-
-    // Render cart items
     function renderCart() {
       const items = Cart.getItems();
-      const loadingEl = document.getElementById('cart-loading');
-      const containerEl = document.getElementById('cart-items-container');
-      const listEl = document.getElementById('cart-items-list');
-      const emptyEl = document.getElementById('empty-cart');
-      const footerEl = document.getElementById('cart-footer');
 
-      loadingEl?.classList.add('hidden');
+      elements.loading.classList.add('hidden');
 
       if (items.length === 0) {
-        emptyEl?.classList.remove('hidden');
-        containerEl?.classList.add('hidden');
-        footerEl?.classList.add('hidden');
+        elements.empty.classList.remove('hidden');
+        elements.items.classList.add('hidden');
+        elements.footer.classList.add('hidden');
         return;
       }
 
-      containerEl?.classList.remove('hidden');
-      footerEl?.classList.remove('hidden');
-      emptyEl?.classList.add('hidden');
+      elements.empty.classList.add('hidden');
+      elements.items.classList.remove('hidden');
+      elements.footer.classList.remove('hidden');
 
-      if (listEl) {
-        listEl.innerHTML = items.map((item, index) => `
-          <li class="flex py-6 gap-4" data-item-index="${index}" data-item-id="${item.id}">
-            <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
-              ${item.cover ? `
-                <img
-                  src="${item.cover}"
-                  alt="Cover of ${item.title}"
-                  class="object-cover"
-                  style="width: 96px; height: 144px;"
+      elements.items.innerHTML = items.map(item => `
+        <li class="flex py-6 gap-4">
+          <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
+            ${item.cover ? `
+              <img src="${item.cover}" alt="${item.title}" class="object-cover w-full h-full" />
+            ` : `
+              <div class="bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
+                No Cover
+              </div>
+            `}
+          </div>
+
+          <div class="flex flex-1 flex-col justify-between">
+            <div>
+              <div class="flex justify-between text-base font-medium">
+                <h3>
+                  <a href="/books/${item.slug}" class="hover:text-primary transition-colors">
+                    ${item.title}
+                  </a>
+                </h3>
+                <p class="ml-4">${item.quantity > 1 ? `${item.quantity}× ` : ''}${formatPrice(item.price)}</p>
+              </div>
+              <p class="mt-1 text-sm opacity-70">${item.format || 'eBook'}</p>
+              <p class="text-sm opacity-70">${item.language || 'English'}</p>
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-1">
+                <button class="btn btn-xs h-6 min-h-0" data-action="dec" data-id="${item.id}">-</button>
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  value="${item.quantity}"
+                  class="input input-xs w-12 h-6 min-h-0 text-center"
+                  data-id="${item.id}"
                 />
-              ` : `
-                <div class="bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
-                  No Cover
-                </div>
-              `}
-            </div>
-
-            <div class="flex flex-1 flex-col justify-between">
-              <div>
-                <div class="flex justify-between text-base font-medium text-base-content">
-                  <h3>
-                    ${item.slug ? `
-                      <a href="/books/${item.slug}" class="hover:text-primary transition-colors">
-                        ${item.title}
-                      </a>
-                    ` : `<span>${item.title}</span>`}
-                  </h3>
-                  <p class="ml-4 item-price">${formatPrice(item.price * item.quantity)}</p>
-                </div>
-                <p class="mt-1 text-sm opacity-70">${item.format || 'eBook'}</p>
-                <p class="mt-1 text-sm opacity-70">${item.language || 'English'}</p>
+                <button class="btn btn-xs h-6 min-h-0" data-action="inc" data-id="${item.id}">+</button>
               </div>
-              <div class="flex items-center justify-between text-sm">
-                <div class="flex items-center gap-1">
-                  <button class="btn btn-xs min-h-0 h-6 qty-decrease" data-item-id="${item.id}">-</button>
-                  <input type="text" inputmode="numeric" pattern="[0-9]*" value="${item.quantity}"
-                    class="input input-xs w-12 h-6 min-h-0 text-center py-0 qty-input"
-                    data-item-id="${item.id}" />
-                  <button class="btn btn-xs min-h-0 h-6 qty-increase" data-item-id="${item.id}">+</button>
-                </div>
-
-                <div class="flex">
-                  <button type="button" class="font-medium text-primary hover:text-primary-focus transition-colors remove-item" data-item-id="${item.id}">
-                    Remove
-                  </button>
-                </div>
-              </div>
+              <button class="font-medium text-primary hover:text-primary-focus" data-action="remove" data-id="${item.id}">
+                Remove
+              </button>
             </div>
-          </li>
-        `).join('');
+          </div>
+        </li>
+      `).join('');
 
-        attachEventListeners();
-      }
-
-      updateSubtotal();
+      elements.subtotal.textContent = formatPrice(Cart.getTotal());
     }
 
-    function attachEventListeners() {
-      // Quantity increase
-      document.querySelectorAll('.qty-increase').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const itemId = (btn as HTMLElement).dataset.itemId!;
-          const item = Cart.getItems().find(i => i.id === itemId);
-          if (item) {
-            Cart.updateQuantity(itemId, item.quantity + 1);
-            renderCart();
-          }
-        });
-      });
+    // Event delegation for buttons - ONLY SET UP ONCE
+    elements.items.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('button') as HTMLButtonElement;
+      if (!btn) return;
 
-      // Quantity decrease
-      document.querySelectorAll('.qty-decrease').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const itemId = (btn as HTMLElement).dataset.itemId!;
-          const item = Cart.getItems().find(i => i.id === itemId);
-          if (item && item.quantity > 1) {
-            Cart.updateQuantity(itemId, item.quantity - 1);
-            renderCart();
-          }
-        });
-      });
+      const { action, id } = btn.dataset;
+      const item = Cart.getItems().find(i => i.id === id);
+      if (!item) return;
 
-      // Manual quantity input
-      document.querySelectorAll('.qty-input').forEach((input) => {
-        input.addEventListener('blur', () => {
-          const inputEl = input as HTMLInputElement;
-          const itemId = inputEl.dataset.itemId!;
-          const value = parseInt(inputEl.value);
+      if (action === 'inc') Cart.updateQuantity(id!, item.quantity + 1);
+      if (action === 'dec' && item.quantity > 1) Cart.updateQuantity(id!, item.quantity - 1);
+      if (action === 'remove') Cart.removeItem(id!);
 
-          if (isNaN(value) || value < 1) {
-            inputEl.value = '1';
-            Cart.updateQuantity(itemId, 1);
-          } else {
-            Cart.updateQuantity(itemId, value);
-          }
-          renderCart();
-        });
-      });
+      renderCart();
+    });
 
-      // Remove item
-      document.querySelectorAll('.remove-item').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const itemId = (btn as HTMLElement).dataset.itemId!;
-          Cart.removeItem(itemId);
-          renderCart();
-        });
-      });
-    }
+    // Event delegation for quantity input focus - select all on click
+    elements.items.addEventListener('focus', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== 'INPUT') return;
 
-    // Handle checkout
-    const checkoutBtn = document.getElementById('checkout-btn');
-    checkoutBtn?.addEventListener('click', async () => {
+      const input = target as HTMLInputElement;
+      input.select();
+    }, true);
+
+    // Event delegation for quantity inputs blur
+    elements.items.addEventListener('blur', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName !== 'INPUT') return;
+
+      const input = target as HTMLInputElement;
+      const value = parseInt(input.value) || 1;
+      Cart.updateQuantity(input.dataset.id!, value);
+      renderCart();
+    }, true);
+
+    // Checkout handler
+    elements.checkout.addEventListener('click', async () => {
       const items = Cart.getItems().map(item => ({
         edition_id: item.id,
         quantity: item.quantity
       }));
 
-      if (items.length === 0) {
-        alert('Your cart is empty.');
-        return;
-      }
+      if (items.length === 0) return;
 
       try {
-        checkoutBtn.setAttribute('disabled', 'true');
+        elements.checkout.disabled = true;
+        const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
 
-        const apiUrl = (document.querySelector('[data-api-url]') as HTMLElement)?.dataset.apiUrl || '';
-        const resp = await fetch(`${apiUrl}/api/checkout`, {
+        const res = await fetch(`${apiUrl}/api/checkout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ items })
         });
 
-        const data = await resp.json();
+        const data = await res.json();
 
-        if (!resp.ok) {
-          alert(data?.message || `Checkout failed (${resp.status})`);
+        if (!res.ok) {
+          alert(data?.message || `Checkout failed (${res.status})`);
           return;
         }
 
         if (data?.url) {
           window.location.href = data.url;
         } else {
-          alert('Checkout session not returned by server.');
+          alert('Checkout session not returned.');
         }
       } catch (err) {
-        console.error('Network error during checkout', err);
-        alert('Network error during checkout. Please try again.');
+        console.error('Checkout error:', err);
+        alert('Network error. Please try again.');
       } finally {
-        checkoutBtn.removeAttribute('disabled');
+        elements.checkout.disabled = false;
       }
     });
 
