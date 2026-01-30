@@ -24,7 +24,7 @@ const { title = 'Catalog' } = Astro.props;
         <div class="flex-none">
           <label class="swap swap-rotate">
             <!-- this hidden checkbox controls the state -->
-            <input type="checkbox" class="theme-controller" value="dracula" />
+            <input type="checkbox" class="theme-controller" value="dim" />
 
             <!-- sun icon -->
             <svg
@@ -55,7 +55,7 @@ const { title = 'Catalog' } = Astro.props;
       <slot />
     </main>
 
-    <!-- Theme controller for autumn/dracula theme switching -->
+    <!-- Theme controller for autumn/dim theme switching -->
     <script>
       const themeToggle = document.querySelector('.theme-controller');
       const html = document.documentElement;
@@ -63,17 +63,17 @@ const { title = 'Catalog' } = Astro.props;
       // Get saved theme or fall back to system preference
       const savedTheme = localStorage.getItem('theme');
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = savedTheme || (systemPrefersDark ? 'dracula' : 'autumn');
+      const initialTheme = savedTheme || (systemPrefersDark ? 'dim' : 'autumn');
 
       // Set initial theme
       html.setAttribute('data-theme', initialTheme);
       if (themeToggle) {
-        (themeToggle as HTMLInputElement).checked = initialTheme === 'dracula';
+        (themeToggle as HTMLInputElement).checked = initialTheme === 'dim';
       }
 
       // Handle toggle changes
       themeToggle?.addEventListener('change', (e) => {
-        const newTheme = (e.target as HTMLInputElement).checked ? 'dracula' : 'autumn';
+        const newTheme = (e.target as HTMLInputElement).checked ? 'dim' : 'autumn';
         html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
       });
