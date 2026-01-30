@@ -1,35 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-// Fetch 2 random books from the API
+// We can't access localStorage server-side, so we'll render the page
+// and let client-side JavaScript populate it with cart data
+
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
-const response = await fetch(`${API_URL}/api/books?lang=eng`);
-const allBooks = await response.json();
-
-// Get 2 random books
-const shuffled = [...allBooks].sort(() => 0.5 - Math.random());
-const cartBooks = shuffled.slice(0, 2);
-
-// Fetch full details for each book
-const booksWithDetails = await Promise.all(
-  cartBooks.map(async (book: any) => {
-    const detailResponse = await fetch(`${API_URL}/api/books/${book.book_slug}`);
-    const bookData = await detailResponse.json();
-    return {
-      ...book,
-      details: bookData,
-      edition: bookData.editions[0]
-    };
-  })
-);
 
 // Format price helper (500 -> £5.00)
 const formatPrice = (price: number) => {
   return `£${(price / 100).toFixed(2)}`;
 };
-
-// Calculate subtotal
-const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
 ---
 
 <BaseLayout title="Shopping Cart">
@@ -40,72 +20,39 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
           <h1 class="text-2xl font-bold text-base-content">Shopping cart</h1>
         </div>
 
-        <div class="flow-root">
-          <ul role="list" class="divide-y divide-base-300">
-            {booksWithDetails.map((book) => (
-              <li class="flex py-6 gap-4">
-                <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
-                  <img 
-                    src={book.edition.cover} 
-                    alt={`Cover of ${book.title} by ${book.author}`}
-                    class="object-cover"
-                    style="width: 96px; height: 144px;"
-                  />
-                </div>
+        <!-- Loading state -->
+        <div id="cart-loading" class="text-center py-12">
+          <span class="loading loading-spinner loading-lg"></span>
+          <p class="mt-4 opacity-70">Loading your cart...</p>
+        </div>
 
-                <div class="flex flex-1 flex-col justify-between">
-                  <div>
-                    <div class="flex justify-between text-base font-medium text-base-content">
-                      <h3>
-                        <a href={`/books/${book.book_slug}`} class="hover:text-primary transition-colors">
-                          {book.title}
-                        </a>
-                      </h3>
-                      <p class="ml-4 item-price">{formatPrice(book.price)}</p>
-                    </div>
-                    <p class="mt-1 text-sm opacity-70">{book.author}</p>
-                    <p class="mt-1 text-sm opacity-70">{book.edition.format || 'eBook'}</p>
-                    <p class="mt-1 text-sm opacity-70">{book.edition.language || 'English'}</p>
-                  </div>
-                  <div class="flex items-center justify-between text-sm">
-                    <div class="flex items-center gap-1">
-                        <button class="btn btn-xs min-h-0 h-6 qty-decrease">-</button>
-                        <input type="text" inputmode="numeric" pattern="[0-9]*" value="1" class="input input-xs w-12 h-6 min-h-0 text-center py-0 qty-input" data-price={book.price} data-edition-id={book.edition.id} />
-                        <button class="btn btn-xs min-h-0 h-6 qty-increase">+</button>
-                      </div>
-
-                    <div class="flex">
-                      <button type="button" class="font-medium text-primary hover:text-primary-focus transition-colors remove-item">
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))}
+        <!-- Cart items will be inserted here -->
+        <div class="hidden" id="cart-items-container">
+          <ul role="list" class="divide-y divide-base-300" id="cart-items-list">
+            <!-- Items populated by JavaScript -->
           </ul>
         </div>
 
-        <!-- Empty cart message (hidden by default) -->
+        <!-- Empty cart message -->
         <div id="empty-cart" class="hidden text-center py-12">
           <p class="text-lg opacity-70">Your cart is empty.</p>
           <a href="/catalog" class="btn btn-primary mt-4">Browse Books</a>
         </div>
       </div>
 
-      <div class="border-t border-base-300 px-4 py-6 sm:px-6" id="cart-footer">
+      <div class="border-t border-base-300 px-4 py-6 sm:px-6 hidden" id="cart-footer">
         <div class="flex justify-between text-base font-medium text-base-content mb-2">
           <p>Subtotal</p>
-          <p id="subtotal-amount">{formatPrice(subtotal)}</p>
+          <p id="subtotal-amount">£0.00</p>
         </div>
         <p class="mt-0.5 text-sm opacity-70">Shipping and taxes calculated at checkout.</p>
-        
+
         <div class="mt-6">
           <button class="btn btn-primary btn-block" id="checkout-btn">
             Checkout
           </button>
         </div>
-        
+
         <div class="mt-6 flex justify-center text-center text-sm opacity-70">
           <p>
             or
@@ -120,6 +67,8 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
   </div>
 
   <script>
+    import { Cart } from '../lib/cart';
+
     // Format price helper (500 -> £5.00)
     function formatPrice(price: number): string {
       return `£${(price / 100).toFixed(2)}`;
@@ -127,165 +76,193 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
 
     // Calculate and update subtotal
     function updateSubtotal() {
-      const cartItems = document.querySelectorAll('ul[role="list"] > li');
-      let total = 0;
-
-      cartItems.forEach((item) => {
-        if (!item.classList.contains('hidden')) {
-          const qtyInput = item.querySelector('.qty-input') as HTMLInputElement;
-          const price = parseInt(qtyInput.dataset.price || '0');
-          const quantity = parseInt(qtyInput.value);
-          total += price * quantity;
-          
-          // Update item price display with quantity multiplier
-          const priceEl = item.querySelector('.item-price');
-          if (priceEl) {
-            if (quantity > 1) {
-              priceEl.textContent = `${quantity}× ${formatPrice(price)}`;
-            } else {
-              priceEl.textContent = formatPrice(price);
-            }
-          }
-        }
-      });
+      const items = Cart.getItems();
+      const total = Cart.getTotal();
 
       const subtotalEl = document.getElementById('subtotal-amount');
       if (subtotalEl) {
         subtotalEl.textContent = formatPrice(total);
       }
 
-      // Check if cart is empty
-      const visibleItems = Array.from(cartItems).filter(item => !item.classList.contains('hidden'));
-      const emptyCart = document.getElementById('empty-cart');
-      const cartFooter = document.getElementById('cart-footer');
-      
-      if (visibleItems.length === 0) {
-        emptyCart?.classList.remove('hidden');
-        cartFooter?.classList.add('hidden');
-      }
+      // Update item price displays
+      items.forEach((item, index) => {
+        const priceEl = document.querySelector(`[data-item-index="${index}"] .item-price`);
+        if (priceEl) {
+          if (item.quantity > 1) {
+            priceEl.textContent = `${item.quantity}× ${formatPrice(item.price)}`;
+          } else {
+            priceEl.textContent = formatPrice(item.price);
+          }
+        }
+      });
     }
 
-    // Handle quantity increase
-    document.querySelectorAll('.qty-increase').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const input = btn.previousElementSibling as HTMLInputElement;
-        const currentQty = parseInt(input.value) || 1;
-        input.value = String(currentQty + 1);
-        updateSubtotal();
-      });
-    });
+    // Render cart items
+    function renderCart() {
+      const items = Cart.getItems();
+      const loadingEl = document.getElementById('cart-loading');
+      const containerEl = document.getElementById('cart-items-container');
+      const listEl = document.getElementById('cart-items-list');
+      const emptyEl = document.getElementById('empty-cart');
+      const footerEl = document.getElementById('cart-footer');
 
-    // Handle quantity decrease
-    document.querySelectorAll('.qty-decrease').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const input = btn.nextElementSibling as HTMLInputElement;
-        const currentQty = parseInt(input.value) || 1;
-        if (currentQty > 1) {
-          input.value = String(currentQty - 1);
-          updateSubtotal();
-        }
-      });
-    });
+      loadingEl?.classList.add('hidden');
 
-    // Auto-select value on focus for better UX
-    document.querySelectorAll('.qty-input').forEach((input) => {
-      input.addEventListener('focus', () => {
-        const inputEl = input as HTMLInputElement;
-        inputEl.select();
-      });
-      
-      input.addEventListener('input', () => {
-        const inputEl = input as HTMLInputElement;
-        let value = inputEl.value;
-        
-        // Remove any non-digit characters
-        value = value.replace(/[^0-9]/g, '');
-        
-        // Allow empty during input (will be fixed on blur)
-        inputEl.value = value;
-        
-        // Update subtotal with current value or treat empty as 1
-        const numValue = parseInt(value) || 1;
-        
-        // Temporarily update for calculation
-        const originalValue = inputEl.value;
-        inputEl.value = String(numValue);
-        updateSubtotal();
-        inputEl.value = originalValue;
-      });
-      
-      // Also validate on blur to catch edge cases
-      input.addEventListener('blur', () => {
-        const inputEl = input as HTMLInputElement;
-        const value = parseInt(inputEl.value);
-        
-        if (isNaN(value) || value < 1 || inputEl.value === '') {
-          inputEl.value = '1';
-          updateSubtotal();
-        }
-      });
-    });
+      if (items.length === 0) {
+        emptyEl?.classList.remove('hidden');
+        containerEl?.classList.add('hidden');
+        footerEl?.classList.add('hidden');
+        return;
+      }
 
-    // Handle remove item
-    document.querySelectorAll('.remove-item').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const listItem = btn.closest('li');
-        if (listItem) {
-          listItem.classList.add('hidden');
-          updateSubtotal();
-        }
-      });
-    });
+      containerEl?.classList.remove('hidden');
+      footerEl?.classList.remove('hidden');
+      emptyEl?.classList.add('hidden');
 
-    // Handle checkout button
+      if (listEl) {
+        listEl.innerHTML = items.map((item, index) => `
+          <li class="flex py-6 gap-4" data-item-index="${index}" data-item-id="${item.id}">
+            <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
+              ${item.cover ? `
+                <img
+                  src="${item.cover}"
+                  alt="Cover of ${item.title}"
+                  class="object-cover"
+                  style="width: 96px; height: 144px;"
+                />
+              ` : `
+                <div class="bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
+                  No Cover
+                </div>
+              `}
+            </div>
+
+            <div class="flex flex-1 flex-col justify-between">
+              <div>
+                <div class="flex justify-between text-base font-medium text-base-content">
+                  <h3>
+                    ${item.slug ? `
+                      <a href="/books/${item.slug}" class="hover:text-primary transition-colors">
+                        ${item.title}
+                      </a>
+                    ` : `<span>${item.title}</span>`}
+                  </h3>
+                  <p class="ml-4 item-price">${formatPrice(item.price * item.quantity)}</p>
+                </div>
+                <p class="mt-1 text-sm opacity-70">${item.format || 'eBook'}</p>
+                <p class="mt-1 text-sm opacity-70">${item.language || 'English'}</p>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-1">
+                  <button class="btn btn-xs min-h-0 h-6 qty-decrease" data-item-id="${item.id}">-</button>
+                  <input type="text" inputmode="numeric" pattern="[0-9]*" value="${item.quantity}"
+                    class="input input-xs w-12 h-6 min-h-0 text-center py-0 qty-input"
+                    data-item-id="${item.id}" />
+                  <button class="btn btn-xs min-h-0 h-6 qty-increase" data-item-id="${item.id}">+</button>
+                </div>
+
+                <div class="flex">
+                  <button type="button" class="font-medium text-primary hover:text-primary-focus transition-colors remove-item" data-item-id="${item.id}">
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </li>
+        `).join('');
+
+        attachEventListeners();
+      }
+
+      updateSubtotal();
+    }
+
+    function attachEventListeners() {
+      // Quantity increase
+      document.querySelectorAll('.qty-increase').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const itemId = (btn as HTMLElement).dataset.itemId!;
+          const item = Cart.getItems().find(i => i.id === itemId);
+          if (item) {
+            Cart.updateQuantity(itemId, item.quantity + 1);
+            renderCart();
+          }
+        });
+      });
+
+      // Quantity decrease
+      document.querySelectorAll('.qty-decrease').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const itemId = (btn as HTMLElement).dataset.itemId!;
+          const item = Cart.getItems().find(i => i.id === itemId);
+          if (item && item.quantity > 1) {
+            Cart.updateQuantity(itemId, item.quantity - 1);
+            renderCart();
+          }
+        });
+      });
+
+      // Manual quantity input
+      document.querySelectorAll('.qty-input').forEach((input) => {
+        input.addEventListener('blur', () => {
+          const inputEl = input as HTMLInputElement;
+          const itemId = inputEl.dataset.itemId!;
+          const value = parseInt(inputEl.value);
+
+          if (isNaN(value) || value < 1) {
+            inputEl.value = '1';
+            Cart.updateQuantity(itemId, 1);
+          } else {
+            Cart.updateQuantity(itemId, value);
+          }
+          renderCart();
+        });
+      });
+
+      // Remove item
+      document.querySelectorAll('.remove-item').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const itemId = (btn as HTMLElement).dataset.itemId!;
+          Cart.removeItem(itemId);
+          renderCart();
+        });
+      });
+    }
+
+    // Handle checkout
     const checkoutBtn = document.getElementById('checkout-btn');
     checkoutBtn?.addEventListener('click', async () => {
-      // Collect visible items with edition id and quantity
-      const cartItems = Array.from(document.querySelectorAll('ul[role="list"] > li'))
-        .filter(li => !li.classList.contains('hidden'));
-
-      const items = cartItems.map(li => {
-        const qtyInput = li.querySelector('.qty-input') as HTMLInputElement | null;
-        const editionId = qtyInput?.dataset?.editionId ?? null;
-        const quantity = qtyInput ? parseInt(qtyInput.value || '1', 10) : 1;
-        return {
-          edition_id: editionId,
-          quantity: quantity
-        };
-      }).filter(item => item.edition_id);
+      const items = Cart.getItems().map(item => ({
+        edition_id: item.id,
+        quantity: item.quantity
+      }));
 
       if (items.length === 0) {
         alert('Your cart is empty.');
         return;
       }
 
-      const payload = { items };
-
       try {
-        // Disable button to prevent duplicate submits
         checkoutBtn.setAttribute('disabled', 'true');
 
-        const apiUrl = (document.querySelector('[data-api-url]') as HTMLElement | null)?.dataset?.apiUrl || '';
+        const apiUrl = (document.querySelector('[data-api-url]') as HTMLElement)?.dataset.apiUrl || '';
         const resp = await fetch(`${apiUrl}/api/checkout`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ items })
         });
 
-        const data = await resp.json().catch(() => ({}));
+        const data = await resp.json();
 
         if (!resp.ok) {
           alert(data?.message || `Checkout failed (${resp.status})`);
-          console.error('Checkout error response:', data);
           return;
         }
 
-        // Expect backend to return CheckoutSession { url: String }
-        if (data && data.url) {
+        if (data?.url) {
           window.location.href = data.url;
         } else {
           alert('Checkout session not returned by server.');
-          console.error('Unexpected checkout response:', data);
         }
       } catch (err) {
         console.error('Network error during checkout', err);
@@ -294,5 +271,11 @@ const subtotal = booksWithDetails.reduce((sum, book) => sum + book.price, 0);
         checkoutBtn.removeAttribute('disabled');
       }
     });
+
+    // Initial render
+    renderCart();
+
+    // Listen for cart updates
+    window.addEventListener('cart-updated', renderCart);
   </script>
 </BaseLayout>

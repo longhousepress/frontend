@@ -167,7 +167,17 @@ const formatPrice = (price: number) => {
           </div>
 
           <!-- Buy button -->
-          <button class="btn btn-primary btn-lg btn-block">
+          <button
+            id="add-to-cart-btn"
+            data-book-id={defaultEdition.id}
+            data-book-title={defaultEdition.title}
+            data-book-price={defaultEdition.price}
+            data-book-cover={defaultEdition.cover}
+            data-book-slug={bookData.book_slug}
+            data-book-format={defaultEdition.format || 'eBook'}
+            data-book-language={defaultEdition.language || 'English'}
+            class="btn btn-primary btn-lg btn-block"
+          >
             Buy
           </button>
         </div>
@@ -276,5 +286,22 @@ const formatPrice = (price: number) => {
         }
       });
     }
+
+    // Cart logic
+    import { Cart } from '../../lib/cart';
+    const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+
+    btn?.addEventListener('click', () => {
+      Cart.addItem({
+        id: btn.dataset.bookId!,
+        title: btn.dataset.bookTitle!,
+        price: parseInt(btn.dataset.bookPrice!),
+        cover: btn.dataset.bookCover,
+        slug: btn.dataset.bookSlug,
+        format: btn.dataset.bookFormat,
+        language: btn.dataset.bookLanguage,
+      });
+    });
+
   </script>
 </BaseLayout>
