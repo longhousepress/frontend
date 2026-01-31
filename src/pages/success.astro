@@ -9,21 +9,49 @@ import Layout from '../layouts/BaseLayout.astro';
 
 <script>
   const params = new URLSearchParams(location?.search ?? '');
-  const token  = params.get('tok');
+  const orderId = params.get('order_id');
+  const sessionId = params.get('session_id');
   const origin = import.meta.env.PUBLIC_ORIGIN || 'http://localhost:8000';
 
   const msgEl = document.getElementById('msg');
   if (!msgEl) {
     // If the message element is missing, nothing to update
-  } else if (!token) {
+  } else if (!orderId || !sessionId) {
     msgEl.textContent = 'Link expired or invalid.';
   } else {
-    fetch(`${origin}/api/download/${token}`, {method:'HEAD'})
-      .then(r => {
-        msgEl.innerHTML = r.ok
-          ? `<p>Payment successful!</p>
-             <a href="${origin}/api/download/${token}" download>Download your file</a>`
-          : 'Link expired or invalid.';
+    // Verify payment and get download URLs in one call
+    fetch(`${origin}/api/order/${orderId}/verify?session_id=${encodeURIComponent(sessionId)}`, { method: 'POST' })
+      .then(async r => {
+        if (!r.ok) {
+          msgEl.textContent = 'Payment not verified or link invalid.';
+          return;
+        }
+
+        const data = await r.json();
+
+        // Expecting an array of { token, url, title, expires_at }
+        if (!Array.isArray(data) || data.length === 0) {
+          msgEl.textContent = 'No downloads available.';
+          return;
+        }
+
+        // Dump simple output: one <p> per edition with a link
+        msgEl.innerHTML = `<p>Payment successful!</p>`;
+        for (const item of data) {
+          const p = document.createElement('p');
+          const a = document.createElement('a');
+          // item.url may be a relative path like /api/download/..., ensure origin if needed
+          const href = item.url && item.url.startsWith('/') ? origin + item.url : (item.url || '#');
+          a.href = href;
+          a.textContent = item.title || href;
+          a.setAttribute('download', '');
+          p.appendChild(a);
+          msgEl.appendChild(p);
+        }
+      })
+      .catch(e => {
+        console.error('verify error', e);
+        msgEl.textContent = 'Error verifying payment.';
       });
   }
 </script>
