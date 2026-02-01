@@ -1,57 +1,199 @@
 ---
-import Layout from '../layouts/BaseLayout.astro';
-// server-side: we don’t have the query param yet, so don’t pre-flight
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
 ---
 
-<Layout title="Thank you">
-  <main id="msg">Verifying…</main>
-</Layout>
+<BaseLayout title="Order Complete">
+  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL}>
+    <div class="flex h-full flex-col bg-base-100">
+      <!-- Header -->
+      <div class="flex-1 px-4 py-6 sm:px-6">
+        <h1 class="text-2xl font-bold text-base-content mb-8">Thank you for your order!</h1>
 
-<script>
-  const params = new URLSearchParams(location?.search ?? '');
-  const orderId = params.get('order_id');
-  const sessionId = params.get('session_id');
-  const origin = import.meta.env.PUBLIC_ORIGIN || 'http://localhost:8000';
+        <!-- Loading state -->
+        <div id="order-loading" class="text-center py-12">
+          <span class="loading loading-spinner loading-lg"></span>
+          <p class="mt-4 opacity-70">Verifying your payment...</p>
+        </div>
 
-  const msgEl = document.getElementById('msg');
-  if (!msgEl) {
-    // If the message element is missing, nothing to update
-  } else if (!orderId || !sessionId) {
-    msgEl.textContent = 'Link expired or invalid.';
-  } else {
-    // Verify payment and get download URLs in one call
-    fetch(`${origin}/api/order/${orderId}/verify?session_id=${encodeURIComponent(sessionId)}`, { method: 'POST' })
-      .then(async r => {
-        if (!r.ok) {
-          msgEl.textContent = 'Payment not verified or link invalid.';
+        <!-- Order items -->
+        <ul id="order-items" class="hidden divide-y divide-base-300"></ul>
+
+        <!-- Order item template -->
+        <template id="order-item-template">
+          <li class="flex py-6 gap-4">
+            <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
+              <img class="item-cover object-cover w-full h-full" alt="" />
+              <div class="item-no-cover bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
+                No Cover
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col">
+              <div class="flex justify-between text-base font-medium items-start mb-1">
+                <h3>
+                  <span class="item-title"></span>
+                </h3>
+                <a class="item-download btn btn-primary btn-sm ml-4 shrink-0" href="" download>
+                  Download .epub
+                </a>
+              </div>
+              <p class="text-sm opacity-70 item-format"></p>
+              <p class="text-sm opacity-70 item-language"></p>
+
+              <div class="flex items-center justify-end text-sm mt-auto">
+                <a href="#" class="text-xs text-primary hover:text-primary-focus">
+                  Which file do I need?
+                </a>
+              </div>
+            </div>
+          </li>
+        </template>
+
+        <!-- Error state -->
+        <div id="error-message" class="hidden text-center py-12">
+          <p class="text-lg opacity-70"></p>
+          <a href="/" class="btn btn-primary mt-4">Return Home</a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div id="order-footer" class="hidden border-t border-base-300 px-4 py-6 sm:px-6">
+        <div class="text-center text-sm opacity-70">
+          <p class="mb-2">
+            Your files have also been sent to <span id="customer-email" class="font-medium">email@domain.com</span>
+          </p>
+          <p>
+            If you have any issues, please contact us with your order reference
+            <span id="order-reference" class="font-medium">#<span id="order-id"></span></span> at
+            <a href="mailto:info@dragonpub.com" class="text-primary hover:text-primary-focus">info@dragonpub.com</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const elements = {
+      loading: document.getElementById('order-loading')!,
+      items: document.getElementById('order-items')!,
+      error: document.getElementById('error-message')!,
+      footer: document.getElementById('order-footer')!,
+      orderId: document.getElementById('order-id')!,
+      customerEmail: document.getElementById('customer-email')!,
+      template: document.getElementById('order-item-template') as HTMLTemplateElement,
+    };
+
+    interface OrderItem {
+      token: string;
+      url: string;
+      title: string;
+      expires_at?: string;
+      cover?: string;
+      format?: string;
+      language?: string;
+    }
+
+    function createOrderItemElement(item: OrderItem) {
+      const clone = elements.template.content.cloneNode(true) as DocumentFragment;
+      const li = clone.querySelector('li')!;
+
+      // Cover image
+      const cover = li.querySelector('.item-cover') as HTMLImageElement;
+      const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
+      if (item.cover) {
+        cover.src = item.cover;
+        cover.alt = item.title;
+        noCover.classList.add('hidden');
+      } else {
+        cover.classList.add('hidden');
+        noCover.classList.remove('hidden');
+      }
+
+      // Book details
+      (li.querySelector('.item-title') as HTMLElement).textContent = item.title;
+      (li.querySelector('.item-format') as HTMLElement).textContent = item.format || 'eBook';
+      (li.querySelector('.item-language') as HTMLElement).textContent = item.language || 'English';
+
+      // Download link
+      const downloadLink = li.querySelector('.item-download') as HTMLAnchorElement;
+      const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
+      const href = item.url && item.url.startsWith('/') ? apiUrl + item.url : (item.url || '#');
+      downloadLink.href = href;
+
+      return li;
+    }
+
+    function showError(message: string) {
+      elements.loading.classList.add('hidden');
+      elements.items.classList.add('hidden');
+      elements.footer.classList.add('hidden');
+      elements.error.classList.remove('hidden');
+      (elements.error.querySelector('p') as HTMLElement).textContent = message;
+    }
+
+    async function verifyAndLoadOrder() {
+      const params = new URLSearchParams(location?.search ?? '');
+      const orderId = params.get('order_id');
+      const sessionId = params.get('session_id');
+
+      if (!orderId || !sessionId) {
+        showError('Link expired or invalid.');
+        return;
+      }
+
+      // Set order ID in footer
+      elements.orderId.textContent = orderId;
+
+      try {
+        const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
+        const res = await fetch(
+          `${apiUrl}/api/order/${orderId}/verify?session_id=${encodeURIComponent(sessionId)}`,
+          { method: 'POST' }
+        );
+
+        if (!res.ok) {
+          showError('Payment not verified or link invalid.');
           return;
         }
 
-        const data = await r.json();
+        const data = await res.json();
 
-        // Expecting an array of { token, url, title, expires_at }
         if (!Array.isArray(data) || data.length === 0) {
-          msgEl.textContent = 'No downloads available.';
+          showError('No downloads available.');
           return;
         }
 
-        // Dump simple output: one <p> per edition with a link
-        msgEl.innerHTML = `<p>Payment successful!</p>`;
-        for (const item of data) {
-          const p = document.createElement('p');
-          const a = document.createElement('a');
-          // item.url may be a relative path like /api/download/..., ensure origin if needed
-          const href = item.url && item.url.startsWith('/') ? origin + item.url : (item.url || '#');
-          a.href = href;
-          a.textContent = item.title || href;
-          a.setAttribute('download', '');
-          p.appendChild(a);
-          msgEl.appendChild(p);
+        // Hide loading, show items and footer
+        elements.loading.classList.add('hidden');
+        elements.items.classList.remove('hidden');
+        elements.footer.classList.remove('hidden');
+
+        // Create and append elements from template
+        data.forEach((item: OrderItem) => {
+          const itemElement = createOrderItemElement(item);
+          elements.items.appendChild(itemElement);
+        });
+
+        // TODO: Update customer email when backend returns it
+        // elements.customerEmail.textContent = data.customer_email;
+
+        // Clear cart after successful order
+        try {
+          const { Cart } = await import('../lib/cart');
+          Cart.clear();
+        } catch (e) {
+          console.error('Failed to clear cart:', e);
         }
-      })
-      .catch(e => {
-        console.error('verify error', e);
-        msgEl.textContent = 'Error verifying payment.';
-      });
-  }
-</script>
+
+      } catch (err) {
+        console.error('Verify error:', err);
+        showError('Error verifying payment. Please try again.');
+      }
+    }
+
+    // Start verification on page load
+    verifyAndLoadOrder();
+  </script>
+</BaseLayout>

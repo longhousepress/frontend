@@ -22,6 +22,48 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
         <!-- Cart items -->
         <ul id="cart-items" class="hidden divide-y divide-base-300"></ul>
 
+        <!-- Cart item template -->
+        <template id="cart-item-template">
+          <li class="flex py-6 gap-4">
+            <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
+              <img class="item-cover object-cover w-full h-full" alt="" />
+              <div class="item-no-cover bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
+                No Cover
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col justify-between">
+              <div>
+                <div class="flex justify-between text-base font-medium">
+                  <h3>
+                    <a class="item-link hover:text-primary transition-colors" href="">
+                      <span class="item-title"></span>
+                    </a>
+                  </h3>
+                  <p class="ml-4 item-price"></p>
+                </div>
+                <p class="mt-1 text-sm opacity-70 item-format"></p>
+                <p class="text-sm opacity-70 item-language"></p>
+              </div>
+
+              <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center gap-1">
+                  <button class="btn btn-xs h-6 min-h-0" data-action="dec">-</button>
+                  <input
+                    type="text"
+                    inputmode="numeric"
+                    class="item-quantity input input-xs w-12 h-6 min-h-0 text-center"
+                  />
+                  <button class="btn btn-xs h-6 min-h-0" data-action="inc">+</button>
+                </div>
+                <button class="font-medium text-primary hover:text-primary-focus" data-action="remove">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </li>
+        </template>
+
         <!-- Empty state -->
         <div id="empty-cart" class="hidden text-center py-12">
           <p class="text-lg opacity-70">Your cart is empty.</p>
@@ -63,7 +105,47 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       footer: document.getElementById('cart-footer')!,
       subtotal: document.getElementById('subtotal')!,
       checkout: document.getElementById('checkout-btn') as HTMLButtonElement,
+      template: document.getElementById('cart-item-template') as HTMLTemplateElement,
     };
+
+    function createCartItemElement(item: ReturnType<typeof Cart.getItems>[0]) {
+      const clone = elements.template.content.cloneNode(true) as DocumentFragment;
+      const li = clone.querySelector('li')!;
+
+      // Set data attributes for event delegation
+      li.querySelectorAll('[data-action]').forEach(el => {
+        (el as HTMLElement).dataset.id = String(item.id);
+      });
+      (li.querySelector('.item-quantity') as HTMLInputElement).dataset.id = String(item.id);
+
+      // Cover image
+      const cover = li.querySelector('.item-cover') as HTMLImageElement;
+      const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
+      if (item.cover) {
+        cover.src = item.cover;
+        cover.alt = item.title;
+        noCover.classList.add('hidden');
+      } else {
+        cover.classList.add('hidden');
+        noCover.classList.remove('hidden');
+      }
+
+      // Book details
+      const link = li.querySelector('.item-link') as HTMLAnchorElement;
+      link.href = `/books/${item.slug}`;
+      (li.querySelector('.item-title') as HTMLElement).textContent = item.title;
+
+      const priceText = item.quantity > 1 ? `${item.quantity}× ${formatPrice(item.price)}` : formatPrice(item.price);
+      (li.querySelector('.item-price') as HTMLElement).textContent = priceText;
+
+      (li.querySelector('.item-format') as HTMLElement).textContent = item.format || 'eBook';
+      (li.querySelector('.item-language') as HTMLElement).textContent = item.language || 'English';
+
+      // Quantity
+      (li.querySelector('.item-quantity') as HTMLInputElement).value = String(item.quantity);
+
+      return li;
+    }
 
     function renderCart() {
       const items = Cart.getItems();
@@ -81,51 +163,14 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       elements.items.classList.remove('hidden');
       elements.footer.classList.remove('hidden');
 
-      elements.items.innerHTML = items.map(item => `
-        <li class="flex py-6 gap-4">
-          <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
-            ${item.cover ? `
-              <img src="${item.cover}" alt="${item.title}" class="object-cover w-full h-full" />
-            ` : `
-              <div class="bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
-                No Cover
-              </div>
-            `}
-          </div>
+      // Clear existing items
+      elements.items.innerHTML = '';
 
-          <div class="flex flex-1 flex-col justify-between">
-            <div>
-              <div class="flex justify-between text-base font-medium">
-                <h3>
-                  <a href="/books/${item.slug}" class="hover:text-primary transition-colors">
-                    ${item.title}
-                  </a>
-                </h3>
-                <p class="ml-4">${item.quantity > 1 ? `${item.quantity}× ` : ''}${formatPrice(item.price)}</p>
-              </div>
-              <p class="mt-1 text-sm opacity-70">${item.format || 'eBook'}</p>
-              <p class="text-sm opacity-70">${item.language || 'English'}</p>
-            </div>
-
-            <div class="flex items-center justify-between text-sm">
-              <div class="flex items-center gap-1">
-                <button class="btn btn-xs h-6 min-h-0" data-action="dec" data-id="${item.id}">-</button>
-                <input
-                  type="text"
-                  inputmode="numeric"
-                  value="${item.quantity}"
-                  class="input input-xs w-12 h-6 min-h-0 text-center"
-                  data-id="${item.id}"
-                />
-                <button class="btn btn-xs h-6 min-h-0" data-action="inc" data-id="${item.id}">+</button>
-              </div>
-              <button class="font-medium text-primary hover:text-primary-focus" data-action="remove" data-id="${item.id}">
-                Remove
-              </button>
-            </div>
-          </div>
-        </li>
-      `).join('');
+      // Create and append elements from template
+      items.forEach(item => {
+        const itemElement = createCartItemElement(item);
+        elements.items.appendChild(itemElement);
+      });
 
       elements.subtotal.textContent = formatPrice(Cart.getTotal());
     }
