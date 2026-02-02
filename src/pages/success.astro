@@ -23,7 +23,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
         <!-- Order item template -->
         <template id="order-item-template">
           <li class="flex py-6 gap-4">
-            <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 96px; height: 144px;">
+            <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 101px; height: 152px;">
               <img class="item-cover object-cover w-full h-full" alt="" />
               <div class="item-no-cover bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
                 No Cover
@@ -31,22 +31,17 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
             </div>
 
             <div class="flex flex-1 flex-col">
-              <div class="flex justify-between text-base font-medium items-start mb-1">
+              <div class="text-base font-medium mb-1">
                 <h3>
                   <span class="item-title"></span>
                 </h3>
-                <a class="item-download btn btn-primary btn-sm ml-4 shrink-0" href="" download>
-                  Download .epub
-                </a>
               </div>
               <p class="text-sm opacity-70 item-format"></p>
               <p class="text-sm opacity-70 item-language"></p>
+            </div>
 
-              <div class="flex items-center justify-end text-sm mt-auto">
-                <a href="#" class="text-xs text-primary hover:text-primary-focus">
-                  Which file do I need?
-                </a>
-              </div>
+            <div class="flex flex-col gap-2 item-downloads" style="min-width: 140px;">
+              <!-- Download buttons will be inserted here -->
             </div>
           </li>
         </template>
@@ -85,26 +80,56 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
       template: document.getElementById('order-item-template') as HTMLTemplateElement,
     };
 
-    interface OrderItem {
-      token: string;
-      url: string;
-      title: string;
-      expires_at?: string;
-      cover?: string;
-      format?: string;
-      language?: string;
+    interface FileDownload {
+      format: string;
+      path: string;
     }
 
-    function createOrderItemElement(item: OrderItem) {
+    interface Edition {
+      id: number;
+      title: string;
+      author_name: string;
+      author_bio: string | null;
+      price: number;
+      cover: string | null;
+      description: string | null;
+      categories: string[];
+      format: string;
+      language: string | null;
+      page_count: number | null;
+      translator: string | null;
+      publication_date: string | null;
+      isbn: string | null;
+      edition_name: string | null;
+      files: FileDownload[];
+    }
+
+    interface Book {
+      id: number;
+      title: string;
+      author: string;
+      book_slug: string;
+      editions: Edition[];
+    }
+
+    interface OrderResponse {
+      email: string;
+      order_reference: string;
+      books: Book[];
+    }
+
+    function createOrderItemElement(edition: Edition) {
       const clone = elements.template.content.cloneNode(true) as DocumentFragment;
       const li = clone.querySelector('li')!;
 
-      // Cover image
+      // Cover image - use public folder for same-origin requests
       const cover = li.querySelector('.item-cover') as HTMLImageElement;
       const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
-      if (item.cover) {
-        cover.src = item.cover;
-        cover.alt = item.title;
+
+      if (edition.cover) {
+        // Cover is in public folder, so use it directly without API URL
+        cover.src = edition.cover;
+        cover.alt = edition.title;
         noCover.classList.add('hidden');
       } else {
         cover.classList.add('hidden');
@@ -112,15 +137,23 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
       }
 
       // Book details
-      (li.querySelector('.item-title') as HTMLElement).textContent = item.title;
-      (li.querySelector('.item-format') as HTMLElement).textContent = item.format || 'eBook';
-      (li.querySelector('.item-language') as HTMLElement).textContent = item.language || 'English';
+      (li.querySelector('.item-title') as HTMLElement).textContent = edition.title;
+      (li.querySelector('.item-format') as HTMLElement).textContent = edition.format || 'eBook';
+      (li.querySelector('.item-language') as HTMLElement).textContent = edition.language || 'English';
 
-      // Download link
-      const downloadLink = li.querySelector('.item-download') as HTMLAnchorElement;
+      // Download links - create a button for each file format
+      const downloadsContainer = li.querySelector('.item-downloads') as HTMLElement;
       const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
-      const href = item.url && item.url.startsWith('/') ? apiUrl + item.url : (item.url || '#');
-      downloadLink.href = href;
+
+      edition.files.forEach((file) => {
+        const downloadBtn = document.createElement('a');
+        downloadBtn.className = 'btn btn-primary btn-sm';
+        downloadBtn.textContent = `Download .${file.format.toLowerCase()}`;
+        const href = file.path.startsWith('/') ? apiUrl + file.path : file.path;
+        downloadBtn.href = href;
+        downloadBtn.download = '';
+        downloadsContainer.appendChild(downloadBtn);
+      });
 
       return li;
     }
@@ -154,9 +187,9 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
           return;
         }
 
-        const data = await res.json();
+        const data: OrderResponse = await res.json();
 
-        if (!Array.isArray(data) || data.length === 0) {
+        if (!data.books || data.books.length === 0) {
           showError('No downloads available.');
           return;
         }
@@ -166,14 +199,17 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
         elements.items.classList.remove('hidden');
         elements.footer.classList.remove('hidden');
 
-        // Create and append elements from template
-        data.forEach((item: OrderItem) => {
-          const itemElement = createOrderItemElement(item);
-          elements.items.appendChild(itemElement);
+        // Create and append elements from template for each edition
+        data.books.forEach((book: Book) => {
+          book.editions.forEach((edition: Edition) => {
+            const itemElement = createOrderItemElement(edition);
+            elements.items.appendChild(itemElement);
+          });
         });
 
-        // TODO: Update customer email when backend returns it
-        // elements.customerEmail.textContent = data.customer_email;
+        // Update customer email and order reference
+        elements.customerEmail.textContent = data.email;
+        elements.orderId.textContent = data.order_reference;
 
         // Clear cart after successful order
         try {
