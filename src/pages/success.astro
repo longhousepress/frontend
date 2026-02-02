@@ -48,7 +48,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
         <!-- Error state -->
         <div id="error-message" class="hidden text-center py-12">
-          <p class="text-lg opacity-70"></p>
+          <p id="error-text" class="text-lg opacity-70"></p>
           <a href="/" class="btn btn-primary mt-4">Return Home</a>
         </div>
       </div>
@@ -62,7 +62,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
           <p>
             If you have any issues, please contact us with your order reference
             <span id="order-reference" class="font-medium">#<span id="order-id"></span></span> at
-            <a href="mailto:info@dragonpub.com" class="text-primary hover:text-primary-focus">info@dragonpub.com</a>
+            <a href="mailto:info@dragonpublishing.com" class="text-primary hover:text-primary-focus">info@dragonpublishing.com</a>
           </p>
         </div>
       </div>
@@ -74,6 +74,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
       loading: document.getElementById('order-loading')!,
       items: document.getElementById('order-items')!,
       error: document.getElementById('error-message')!,
+      errorText: document.getElementById('error-text')!,
       footer: document.getElementById('order-footer')!,
       orderId: document.getElementById('order-id')!,
       customerEmail: document.getElementById('customer-email')!,
@@ -158,12 +159,70 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
       return li;
     }
 
-    function showError(message: string) {
+    function clearUiAndShowErrorNodes(nodes: Node[]) {
       elements.loading.classList.add('hidden');
       elements.items.classList.add('hidden');
       elements.footer.classList.add('hidden');
       elements.error.classList.remove('hidden');
-      (elements.error.querySelector('p') as HTMLElement).textContent = message;
+
+      // Clear previous error text
+      elements.errorText.textContent = '';
+      nodes.forEach(n => elements.errorText.appendChild(n));
+    }
+
+    function showPlainError(text: string) {
+      clearUiAndShowErrorNodes([document.createTextNode(text)]);
+    }
+
+    /**
+     * Build a mailto anchor element with dynamic subject.
+     * Subject format: "Issue with order <order_id>" when orderRef provided,
+     * otherwise "Issue with order".
+     *
+     * Returns an <a> element with the mailto href and link text set to the support email.
+     */
+    function buildMailtoLink(orderRef?: string) {
+      const email = 'info@dragonpublishing.com';
+      const subject = orderRef ? `Issue with order ${orderRef}` : 'Issue with order';
+      const href = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+      const mail = document.createElement('a');
+      mail.href = href;
+      mail.className = 'text-primary hover:text-primary-focus';
+      mail.appendChild(document.createTextNode(email));
+      return mail;
+    }
+
+    /**
+     * Show the expired convenience links message.
+     * Strategy:
+     *  - Prefer headerOrderId (X-Order-Id) if present
+     *  - Else prefer sessionId
+     *  - Else omit the reference
+     *
+     * The message is built using DOM nodes (no innerHTML) for safety.
+     */
+    function showExpiredLinksMessage(preferredRef?: string) {
+      const nodes: Node[] = [];
+      nodes.push(document.createTextNode('The convenience links for this order have expired. Permanent download links have been sent to the email you used during checkout.'));
+      // add a line break before the follow-up sentence
+      nodes.push(document.createElement('br'));
+      nodes.push(document.createElement('br'));
+      nodes.push(document.createTextNode(' '));
+
+      if (preferredRef) {
+        nodes.push(document.createTextNode('If you have not received the email, please contact '));
+        nodes.push(buildMailtoLink(preferredRef));
+        nodes.push(document.createTextNode(' with reference '));
+        // prefix '#' before the displayed order id
+        nodes.push(document.createTextNode('#' + preferredRef));
+        nodes.push(document.createTextNode('.'));
+      } else {
+        nodes.push(document.createTextNode('If you have not received the email, please contact '));
+        nodes.push(buildMailtoLink(undefined));
+        nodes.push(document.createTextNode('.'));
+      }
+
+      clearUiAndShowErrorNodes(nodes);
     }
 
     async function verifyAndLoadOrder() {
@@ -171,7 +230,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
       const sessionId = params.get('session_id');
 
       if (!sessionId) {
-        showError('Link expired or invalid.');
+        showPlainError('Link expired or invalid.');
         return;
       }
 
@@ -182,15 +241,30 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
           { method: 'GET' }
         );
 
+        // Handle 410 Gone responses specially
+        if (res.status === 410) {
+          // Prefer X-Order-Id header (case-insensitive); browsers' headers.get is case-insensitive
+          const headerOrderId = res.headers.get('x-order-id') || res.headers.get('X-Order-Id') || null;
+
+          if (headerOrderId) {
+            showExpiredLinksMessage(headerOrderId);
+          } else if (sessionId) {
+            showExpiredLinksMessage(sessionId);
+          } else {
+            showExpiredLinksMessage(undefined);
+          }
+          return;
+        }
+
         if (!res.ok) {
-          showError('Payment not verified or link invalid.');
+          showPlainError('Payment not verified or link invalid.');
           return;
         }
 
         const data: OrderResponse = await res.json();
 
         if (!data.books || data.books.length === 0) {
-          showError('No downloads available.');
+          showPlainError('No downloads available.');
           return;
         }
 
@@ -221,7 +295,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
       } catch (err) {
         console.error('Verify error:', err);
-        showError('Error verifying payment. Please try again.');
+        showPlainError('Error verifying payment. Please try again.');
       }
     }
 
