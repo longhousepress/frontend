@@ -3,9 +3,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 
 // Fetch books from API at build time (default to English editions)
+// NOTE: backend now returns Vec<Book> where each Book has an `editions: Edition[]`.
+// Normalize to a flat list of edition-like objects by defaulting to the first edition.
+// TODO: work on proper localization/edition-selection later.
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const response = await fetch(`${API_URL}/api/books?lang=eng`);
-const books = await response.json();
+const booksRaw = await response.json();
+// Normalize backend Book -> frontend edition-like shape (use first edition if present)
+const books = (booksRaw || []).map((book: any) => {
+  const edition = (book.editions && book.editions.length > 0) ? book.editions[0] : null;
+  return {
+    id: edition?.id ?? book.id,
+    title: edition?.title ?? book.title,
+    author: edition?.author_name ?? book.author,
+    price: edition?.price ?? 0,
+    cover: edition?.cover ?? '',
+    description: edition?.description ?? null,
+    book_slug: book.book_slug,
+    categories: edition?.categories ?? book.categories ?? [],
+    format: edition?.format ?? 'eBook',
+    language: edition?.language ?? book.language ?? null,
+    page_count: edition?.page_count ?? book.page_count ?? null,
+    translator: edition?.translator ?? null,
+    publication_date: edition?.publication_date ?? null,
+    isbn: edition?.isbn ?? null,
+  };
+});
 
 // Format price helper for server-side rendering (500 -> £5.00)
 const formatPrice = (price: number) => {
