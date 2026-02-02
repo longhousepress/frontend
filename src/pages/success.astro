@@ -135,22 +135,18 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
     async function verifyAndLoadOrder() {
       const params = new URLSearchParams(location?.search ?? '');
-      const orderId = params.get('order_id');
       const sessionId = params.get('session_id');
 
-      if (!orderId || !sessionId) {
+      if (!sessionId) {
         showError('Link expired or invalid.');
         return;
       }
 
-      // Set order ID in footer
-      elements.orderId.textContent = orderId;
-
       try {
         const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
         const res = await fetch(
-          `${apiUrl}/api/order/${orderId}/verify?session_id=${encodeURIComponent(sessionId)}`,
-          { method: 'POST' }
+          `${apiUrl}/api/order/verify?session_id=${encodeURIComponent(sessionId)}`,
+          { method: 'GET' }
         );
 
         if (!res.ok) {
