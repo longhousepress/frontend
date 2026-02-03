@@ -9,6 +9,12 @@ const { title = 'Catalog' } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <link rel="icon" href="/favicon.ico" />
+    <!-- Inline script to set theme immediately, preventing flash -->
+    <script is:inline>
+      const savedTheme = localStorage.getItem('theme');
+      const initialTheme = savedTheme || 'autumn';
+      document.documentElement.setAttribute('data-theme', initialTheme);
+    </script>
   </head>
   <body class="min-h-screen bg-base-100 text-base">
     <!-- Sticky navbar -->
@@ -78,22 +84,25 @@ const { title = 'Catalog' } = Astro.props;
       const themeToggle = document.querySelector('.theme-controller');
       const html = document.documentElement;
 
-      // Get saved theme or fall back to system preference
-      const savedTheme = localStorage.getItem('theme');
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = savedTheme || (systemPrefersDark ? 'dim' : 'autumn');
-
-      // Set initial theme
-      html.setAttribute('data-theme', initialTheme);
+      // Get current theme (already set by inline script in head)
+      const currentTheme = html.getAttribute('data-theme');
+      
+      // Sync toggle state with current theme
       if (themeToggle) {
-        (themeToggle as HTMLInputElement).checked = initialTheme === 'dim';
+        (themeToggle as HTMLInputElement).checked = currentTheme === 'dim';
       }
 
       // Handle toggle changes
       themeToggle?.addEventListener('change', (e) => {
         const newTheme = (e.target as HTMLInputElement).checked ? 'dim' : 'autumn';
         html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+        
+        // Only persist dark theme choice, clear storage when switching back to autumn
+        if (newTheme === 'dim') {
+          localStorage.setItem('theme', newTheme);
+        } else {
+          localStorage.removeItem('theme');
+        }
       });
 
       // Cart badge updater
