@@ -137,3 +137,9 @@
   opacity: 0.6;
   pointer-events: auto;
 }
+
+/* Instant view transitions */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0s;
+}

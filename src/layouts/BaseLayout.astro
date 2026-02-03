@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { ViewTransitions } from 'astro:transitions';
 const { title = 'Catalog' } = Astro.props;
 ---
 <!doctype html>
@@ -9,12 +10,7 @@ const { title = 'Catalog' } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <link rel="icon" href="/favicon.ico" />
-    <!-- Inline script to set theme immediately, preventing flash -->
-    <script is:inline>
-      const savedTheme = localStorage.getItem('theme');
-      const initialTheme = savedTheme || 'autumn';
-      document.documentElement.setAttribute('data-theme', initialTheme);
-    </script>
+    <ViewTransitions />
   </head>
   <body class="min-h-screen bg-base-100 text-base">
     <!-- Sticky navbar -->
@@ -79,63 +75,75 @@ const { title = 'Catalog' } = Astro.props;
     <script>
       import { Cart } from '../lib/cart';
 
-      // Theme toggle
-      const themeToggle = document.getElementById('theme-toggle');
-      const sunIcon = document.getElementById('sun-icon');
-      const moonIcon = document.getElementById('moon-icon');
-      const html = document.documentElement;
-
-      function updateThemeIcons(theme: string) {
-        if (theme === 'dim') {
-          sunIcon?.classList.add('hidden');
-          moonIcon?.classList.remove('hidden');
-        } else {
-          sunIcon?.classList.remove('hidden');
-          moonIcon?.classList.add('hidden');
-        }
+      function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const initialTheme = savedTheme || 'autumn';
+        document.documentElement.setAttribute('data-theme', initialTheme);
       }
 
-      // Set initial icon based on current theme
-      const currentTheme = html.getAttribute('data-theme') || 'autumn';
-      updateThemeIcons(currentTheme);
+      function setupTheme() {
+        const themeToggle = document.getElementById('theme-toggle');
+        const sunIcon = document.getElementById('sun-icon');
+        const moonIcon = document.getElementById('moon-icon');
+        const html = document.documentElement;
 
-      // Handle theme toggle click
-      themeToggle?.addEventListener('click', () => {
-        const current = html.getAttribute('data-theme');
-        const newTheme = current === 'dim' ? 'autumn' : 'dim';
-        
-        html.setAttribute('data-theme', newTheme);
-        updateThemeIcons(newTheme);
-        
-        // Only persist dark theme choice, clear storage when switching back to autumn
-        if (newTheme === 'dim') {
-          localStorage.setItem('theme', newTheme);
-        } else {
-          localStorage.removeItem('theme');
+        function updateThemeIcons(theme: string) {
+          if (theme === 'dim') {
+            sunIcon?.classList.add('hidden');
+            moonIcon?.classList.remove('hidden');
+          } else {
+            sunIcon?.classList.remove('hidden');
+            moonIcon?.classList.add('hidden');
+          }
         }
+
+        const currentTheme = html.getAttribute('data-theme') || 'autumn';
+        updateThemeIcons(currentTheme);
+
+        themeToggle?.addEventListener('click', () => {
+          const current = html.getAttribute('data-theme');
+          const newTheme = current === 'dim' ? 'autumn' : 'dim';
+          
+          html.setAttribute('data-theme', newTheme);
+          updateThemeIcons(newTheme);
+          
+          if (newTheme === 'dim') {
+            localStorage.setItem('theme', newTheme);
+          } else {
+            localStorage.removeItem('theme');
+          }
+        });
+      }
+
+      function setupCart() {
+        const badge = document.getElementById('cart-badge');
+
+        function updateCartBadge() {
+          if (!badge) return;
+          
+          const count = Cart.getCount();
+          
+          if (count > 0) {
+            badge.textContent = String(count);
+            badge.classList.remove('hidden');
+          } else {
+            badge.classList.add('hidden');
+          }
+        }
+
+        updateCartBadge();
+        window.addEventListener('cart-updated', updateCartBadge);
+      }
+
+      initTheme();
+      setupTheme();
+      setupCart();
+
+      document.addEventListener('astro:after-swap', () => {
+        initTheme();
+        setupTheme();
+        setupCart();
       });
-
-      // Cart badge updater
-      const badge = document.getElementById('cart-badge');
-
-      function updateCartBadge() {
-        if (!badge) return;
-        
-        const count = Cart.getCount();
-        
-        if (count > 0) {
-          badge.textContent = String(count);
-          badge.classList.remove('hidden');
-        } else {
-          badge.classList.add('hidden');
-        }
-      }
-
-      // Initial update
-      updateCartBadge();
-
-      // Listen for cart updates
-      window.addEventListener('cart-updated', updateCartBadge);
     </script>
   </body>
 </html>
