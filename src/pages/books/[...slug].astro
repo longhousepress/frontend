@@ -32,7 +32,7 @@ const formatPrice = (price: number) => {
 };
 ---
 
-<BaseLayout title={`${defaultEdition.title} - ${bookData.author}`}>
+<BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
     <!-- Two-column layout: cover left, details right -->
     <div class="grid sm:grid-cols-2 gap-8 mb-8">
@@ -40,7 +40,7 @@ const formatPrice = (price: number) => {
       <div class="flex justify-center sm:justify-start">
         <img
           src={defaultEdition.cover}
-          alt={`Cover of ${defaultEdition.title} by ${bookData.author}`}
+          alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
           class="rounded-lg shadow-2xl"
           style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
         />
@@ -105,7 +105,7 @@ const formatPrice = (price: number) => {
           {bookData.author_bio ? (
             <details class="author-details mb-6">
               <summary class="flex items-center gap-2 cursor-pointer list-none">
-                <p class="opacity-70">by {bookData.author}</p>
+                <p class="opacity-70">by {defaultEdition.author_name}</p>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="opacity-50 hover:opacity-100 transition-all duration-200 author-arrow">
                   <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
                 </svg>
@@ -118,7 +118,7 @@ const formatPrice = (price: number) => {
               </div>
             </details>
           ) : (
-            <p class="opacity-70 mb-6">by {bookData.author}</p>
+            <p class="opacity-70 mb-6">by {defaultEdition.author_name}</p>
           )}
         </div>
 
