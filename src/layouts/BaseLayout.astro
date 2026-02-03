@@ -11,6 +11,12 @@ const { title = 'Catalog' } = Astro.props;
     <title>{title}</title>
     <link rel="icon" href="/favicon.ico" />
     <ViewTransitions />
+    <!-- Prevent theme flash by setting theme immediately -->
+    <script is:inline>
+      const savedTheme = localStorage.getItem('theme');
+      const initialTheme = savedTheme || 'autumn';
+      document.documentElement.setAttribute('data-theme', initialTheme);
+    </script>
   </head>
   <body class="min-h-screen bg-base-100 text-base">
     <!-- Sticky navbar -->
@@ -75,12 +81,6 @@ const { title = 'Catalog' } = Astro.props;
     <script>
       import { Cart } from '../lib/cart';
 
-      function initTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        const initialTheme = savedTheme || 'autumn';
-        document.documentElement.setAttribute('data-theme', initialTheme);
-      }
-
       function setupTheme() {
         const themeToggle = document.getElementById('theme-toggle');
         const sunIcon = document.getElementById('sun-icon');
@@ -107,11 +107,7 @@ const { title = 'Catalog' } = Astro.props;
           html.setAttribute('data-theme', newTheme);
           updateThemeIcons(newTheme);
           
-          if (newTheme === 'dim') {
-            localStorage.setItem('theme', newTheme);
-          } else {
-            localStorage.removeItem('theme');
-          }
+          localStorage.setItem('theme', newTheme);
         });
       }
 
@@ -135,12 +131,15 @@ const { title = 'Catalog' } = Astro.props;
         window.addEventListener('cart-updated', updateCartBadge);
       }
 
-      initTheme();
       setupTheme();
       setupCart();
 
       document.addEventListener('astro:after-swap', () => {
-        initTheme();
+        // Restore theme after navigation
+        const savedTheme = localStorage.getItem('theme');
+        const theme = savedTheme || 'autumn';
+        document.documentElement.setAttribute('data-theme', theme);
+        
         setupTheme();
         setupCart();
       });
