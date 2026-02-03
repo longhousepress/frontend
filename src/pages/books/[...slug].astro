@@ -166,7 +166,7 @@ const formatPrice = (price: number) => {
             </div>
           </div>
 
-          <!-- Buy button -->
+          <!-- Add to cart button -->
           <button
             id="add-to-cart-btn"
             data-book-id={defaultEdition.id}
@@ -178,7 +178,7 @@ const formatPrice = (price: number) => {
             data-book-language={defaultEdition.language || 'English'}
             class="btn btn-primary btn-lg btn-block"
           >
-            Buy
+            Add to cart
           </button>
         </div>
       </div>
@@ -301,7 +301,16 @@ const formatPrice = (price: number) => {
         format: btn.dataset.bookFormat,
         language: btn.dataset.bookLanguage,
       });
-      window.location.href = "/checkout";
+
+      // Show feedback by disabling button temporarily
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Successfully added';
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }, 1000);
     });
 
   </script>

@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import CartIcon from "../components/CartIcon.astro";
 const { title = 'Catalog' } = Astro.props;
 ---
 <!doctype html>
@@ -21,7 +22,9 @@ const { title = 'Catalog' } = Astro.props;
             <li><a href="/about"><span>About</span></a></li>
           </ul>
         </div>
-        <div class="flex-none">
+        <div class="flex-none gap-2">
+          <CartIcon />
+          
           <label class="swap swap-rotate">
             <!-- this hidden checkbox controls the state -->
             <input type="checkbox" class="theme-controller" value="dim" />
