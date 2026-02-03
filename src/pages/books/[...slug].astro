@@ -21,21 +21,28 @@ export async function getStaticPaths() {
 const { bookData } = Astro.props;
 const defaultEdition = bookData.editions[0];
 const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
+const samplePages = bookData.sample_pages || defaultEdition.sample_pages || [];
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
     <div class="grid sm:grid-cols-2 gap-8 mb-8 items-end">
-      <div class="flex flex-col items-center sm:items-start">
+      <div class="flex flex-col items-center sm:items-start justify-end" style="height: calc(320px * 9 / 6);">
         <img
           src={defaultEdition.cover}
           alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
           class="rounded-lg shadow-2xl mb-4"
           style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
         />
-        <button id="read-sample-btn" class="btn btn-outline btn-sm w-full max-w-[320px]">
-          Read a sample
-        </button>
+        {samplePages.length > 0 && (
+          <button 
+            id="read-sample-btn" 
+            class="btn btn-outline btn-sm w-full max-w-[320px]"
+            data-sample-pages={JSON.stringify(samplePages)}
+          >
+            Read a sample
+          </button>
+        )}
       </div>
 
 
@@ -194,7 +201,7 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
     )}
   </div>
 
-
+  {samplePages.length > 0 && (
   <div id="sample-modal" class="sample-modal hidden">
 
     <div class="sample-modal-backdrop"></div>
@@ -233,6 +240,7 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       </div>
     </div>
   </div>
+  )}
 
   <style>
     .metadata-details[open] .metadata-arrow,
@@ -389,13 +397,9 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
     const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
     const pageSlider = document.getElementById('page-slider') as HTMLInputElement;
 
-
-    const samplePages = [
-      '/sample-a5-2.webp',
-      '/sample-a5-3.webp',
-      '/sample-a5-4.webp',
-      '/sample-a5-5.webp',
-    ];
+    // Get sample pages from data attribute
+    const samplePagesData = readSampleBtn?.getAttribute('data-sample-pages');
+    const samplePages: string[] = samplePagesData ? JSON.parse(samplePagesData) : [];
     let currentPageIndex = 0;
 
     function updateSampleDisplay() {
@@ -421,6 +425,7 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
     }
 
     readSampleBtn?.addEventListener('click', () => {
+      if (samplePages.length === 0) return;
       currentPageIndex = 0;
       pageSlider.max = (samplePages.length - 1).toString();
       updateSampleDisplay();
