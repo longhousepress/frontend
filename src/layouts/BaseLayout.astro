@@ -1,6 +1,5 @@
 ---
 import "../styles/global.css";
-import CartIcon from "../components/CartIcon.astro";
 const { title = 'Catalog' } = Astro.props;
 ---
 <!doctype html>
@@ -12,7 +11,7 @@ const { title = 'Catalog' } = Astro.props;
     <link rel="icon" href="/favicon.ico" />
   </head>
   <body class="min-h-screen bg-base-100 text-base">
-    <!-- Sticky navbar (daisyUI) -->
+    <!-- Sticky navbar -->
     <div class="sticky top-0 z-50">
       <div class="navbar bg-base-100 shadow-sm min-h-0 h-12">
         <div class="flex-1">
@@ -22,14 +21,29 @@ const { title = 'Catalog' } = Astro.props;
             <li><a href="/about"><span>About</span></a></li>
           </ul>
         </div>
-        <div class="flex-none gap-2">
-          <CartIcon />
+        <div class="flex-none flex items-center gap-2">
+          <a href="/checkout" class="flex items-center justify-center p-2 rounded-lg hover:bg-transparent transition-colors" aria-label="Shopping cart">
+            <div class="indicator">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              <span id="cart-badge" class="badge badge-sm badge-primary indicator-item hidden">0</span>
+            </div>
+          </a>
           
-          <label class="swap swap-rotate">
-            <!-- this hidden checkbox controls the state -->
-            <input type="checkbox" class="theme-controller" value="dim" />
-
-            <!-- sun icon -->
+          <label class="swap swap-rotate flex items-center justify-center p-2 cursor-pointer hover:bg-transparent transition-colors">
+            <input type="checkbox" class="theme-controller hidden" value="dim" />
             <svg
               class="swap-off fill-current"
               style="width: 21px; height: 21px;"
@@ -38,8 +52,6 @@ const { title = 'Catalog' } = Astro.props;
               <path
                 d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
             </svg>
-
-            <!-- moon icon -->
             <svg
               class="swap-on fill-current"
               style="width: 21px; height: 21px;"
@@ -58,8 +70,11 @@ const { title = 'Catalog' } = Astro.props;
       <slot />
     </main>
 
-    <!-- Theme controller for autumn/dim theme switching -->
+    <!-- Theme controller and cart badge updater -->
     <script>
+      import { Cart } from '../lib/cart';
+
+      // Theme controller for autumn/dim theme switching
       const themeToggle = document.querySelector('.theme-controller');
       const html = document.documentElement;
 
@@ -80,6 +95,28 @@ const { title = 'Catalog' } = Astro.props;
         html.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
       });
+
+      // Cart badge updater
+      const badge = document.getElementById('cart-badge');
+
+      function updateCartBadge() {
+        if (!badge) return;
+        
+        const count = Cart.getCount();
+        
+        if (count > 0) {
+          badge.textContent = String(count);
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      // Initial update
+      updateCartBadge();
+
+      // Listen for cart updates
+      window.addEventListener('cart-updated', updateCartBadge);
     </script>
   </body>
 </html>
