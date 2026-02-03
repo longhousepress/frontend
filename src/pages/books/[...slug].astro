@@ -35,15 +35,18 @@ const formatPrice = (price: number) => {
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
     <!-- Two-column layout: cover left, details right -->
-    <div class="grid sm:grid-cols-2 gap-8 mb-8">
+    <div class="grid sm:grid-cols-2 gap-8 mb-8 items-end">
       <!-- Left column: Cover image -->
-      <div class="flex justify-center sm:justify-start">
+      <div class="flex flex-col items-center sm:items-start">
         <img
           src={defaultEdition.cover}
           alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
-          class="rounded-lg shadow-2xl"
+          class="rounded-lg shadow-2xl mb-4"
           style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
         />
+        <button id="read-sample-btn" class="btn btn-outline btn-sm w-full max-w-[320px]">
+          Read a sample
+        </button>
       </div>
 
       <!-- Right column: Book details (flex layout with description in middle, buy button at bottom) -->
@@ -176,7 +179,7 @@ const formatPrice = (price: number) => {
             data-book-slug={bookData.book_slug}
             data-book-format={defaultEdition.format || 'eBook'}
             data-book-language={defaultEdition.language || 'English'}
-            class="btn btn-primary btn-lg btn-block"
+            class="btn btn-primary btn-sm btn-block"
           >
             Add to cart
           </button>
@@ -200,6 +203,46 @@ const formatPrice = (price: number) => {
         </div>
       </>
     )}
+  </div>
+
+  <!-- Custom modal overlay for sample reader -->
+  <div id="sample-modal" class="sample-modal hidden">
+    <!-- Backdrop -->
+    <div class="sample-modal-backdrop"></div>
+    
+    <!-- Modal content -->
+    <div class="sample-modal-content">
+      <!-- Top control panel -->
+      <div class="sample-control-panel bg-base-100 flex items-center justify-between px-4 py-1 rounded-t-lg">
+        <span class="text-sm opacity-70">
+          <span class="font-medium">{defaultEdition.title}</span> — Sample — <span id="page-indicator">Page 1 of 4</span>
+        </span>
+        <button id="close-modal-btn" class="btn btn-sm btn-ghost">✕</button>
+      </div>
+      
+      <!-- Sample page image -->
+      <div class="flex justify-center bg-white p-4">
+        <img id="page-image" src="" alt="Book sample page" class="max-h-[75vh] w-auto" />
+      </div>
+      
+      <!-- Bottom control panel -->
+      <div class="sample-control-panel bg-base-100 flex items-center justify-between gap-4 px-4 py-1 rounded-b-lg">
+        <button id="prev-page-btn" class="btn btn-xs" disabled>
+          ←
+        </button>
+        <input 
+          id="page-slider" 
+          type="range" 
+          min="0" 
+          max="3" 
+          value="0" 
+          class="range range-xs flex-1 opacity-30"
+        />
+        <button id="next-page-btn" class="btn btn-xs">
+          →
+        </button>
+      </div>
+    </div>
   </div>
 
   <style>
@@ -252,6 +295,53 @@ const formatPrice = (price: number) => {
     .custom-tooltip:hover .tooltip-text {
       visibility: visible;
       opacity: 1;
+    }
+
+    /* Custom modal styles */
+    .sample-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .sample-modal.hidden {
+      display: none;
+    }
+
+    .sample-modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+      z-index: 1;
+    }
+
+    .sample-modal-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sample-control-panel {
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #page-image {
+      display: block;
+      object-fit: contain;
     }
   </style>
 
@@ -311,6 +401,99 @@ const formatPrice = (price: number) => {
         btn.disabled = false;
         btn.textContent = originalText;
       }, 1000);
+    });
+
+    // Sample reader logic
+    const readSampleBtn = document.getElementById('read-sample-btn');
+    const sampleModal = document.getElementById('sample-modal') as HTMLDivElement;
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalBackdrop = document.querySelector('.sample-modal-backdrop') as HTMLElement;
+    const pageImage = document.getElementById('page-image') as HTMLImageElement;
+    const prevBtn = document.getElementById('prev-page-btn') as HTMLButtonElement;
+    const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
+    const pageSlider = document.getElementById('page-slider') as HTMLInputElement;
+
+    // Sample page images
+    const samplePages = [
+      '/sample-a5-2.webp',
+      '/sample-a5-3.webp',
+      '/sample-a5-4.webp',
+      '/sample-a5-5.webp',
+    ];
+    let currentPageIndex = 0;
+
+    function updateSampleDisplay() {
+      if (!pageImage) return;
+      
+      // Display current page image
+      pageImage.src = samplePages[currentPageIndex] || '';
+      pageImage.alt = `Book sample page ${currentPageIndex + 1}`;
+      
+      // Update button states
+      const totalPages = samplePages.length;
+      prevBtn.disabled = currentPageIndex === 0;
+      nextBtn.disabled = currentPageIndex >= totalPages - 1;
+      
+      // Update slider
+      pageSlider.value = currentPageIndex.toString();
+      
+      // Update page indicator
+      const pageIndicator = document.getElementById('page-indicator');
+      if (pageIndicator) {
+        pageIndicator.textContent = `Page ${currentPageIndex + 1} of ${totalPages}`;
+      }
+    }
+
+    readSampleBtn?.addEventListener('click', () => {
+      currentPageIndex = 0;
+      pageSlider.max = (samplePages.length - 1).toString();
+      updateSampleDisplay();
+      sampleModal?.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    });
+
+    function closeModal() {
+      sampleModal?.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    closeModalBtn?.addEventListener('click', closeModal);
+    modalBackdrop?.addEventListener('click', closeModal);
+
+    prevBtn?.addEventListener('click', () => {
+      if (currentPageIndex > 0) {
+        currentPageIndex--;
+        updateSampleDisplay();
+      }
+    });
+
+    nextBtn?.addEventListener('click', () => {
+      if (currentPageIndex < samplePages.length - 1) {
+        currentPageIndex++;
+        updateSampleDisplay();
+      }
+    });
+
+    pageSlider?.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement;
+      currentPageIndex = parseInt(target.value);
+      updateSampleDisplay();
+    });
+
+    // Keyboard navigation (only when modal is open)
+    document.addEventListener('keydown', (e) => {
+      if (sampleModal?.classList.contains('hidden')) return;
+      
+      if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
+        e.preventDefault();
+        prevBtn.click();
+      } else if (e.key === 'ArrowRight' && !nextBtn.disabled) {
+        e.preventDefault();
+        nextBtn.click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModal();
+      }
     });
 
   </script>
