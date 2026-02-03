@@ -49,89 +49,99 @@ const allCategories = Array.from(
     </div>
 
     <!-- Search with Filter -->
-    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
-      <!-- Filter Button & Expandable Panel -->
-      <div class="relative flex items-center h-8">
-        <!-- Filter Button -->
-        <button
-          id="filter-toggle"
-          class="btn btn-sm btn-square h-8 min-h-8 flex-shrink-0 relative z-10"
-          aria-label="Toggle filters"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
-          </svg>
-        </button>
+    <div class="max-w-7xl mx-auto mb-6">
+      <!-- Filter and Search Container -->
+      <div class="flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4 sm:gap-0">
+        <!-- Filter Button & Expandable Panel Container -->
+        <div class="relative w-full sm:w-auto">
+          <div class="flex items-center sm:block">
+            <!-- Filter Button -->
+            <button
+              id="filter-toggle"
+              class="btn btn-sm btn-square h-8 min-h-8 flex-shrink-0 relative z-10"
+              aria-label="Toggle filters"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+              </svg>
+            </button>
+          </div>
 
-        <!-- Expandable Filter Panel -->
-        <div
-          id="filter-panel"
-          class="overflow-hidden transition-all duration-300 ease-in-out rounded-r-lg absolute"
-          style="width: 0; opacity: 0; left: 28px;"
-        >
-          <div class="bg-base-300 pr-3 pl-3 whitespace-nowrap flex items-center gap-3 h-8">
-            <span class="text-xs font-medium">Genre</span>
-            <span class="text-xs opacity-30">|</span>
-            <div class="flex items-center gap-3">
-              {allCategories.map((category: string) => (
-                <label class="flex items-center gap-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    class="checkbox checkbox-xs checkbox-primary genre-filter rounded-sm"
-                    value={category}
-                  />
-                  <span class="text-xs">{category}</span>
-                </label>
-              ))}
+          <!-- Expandable Filter Panel -->
+          <div
+            id="filter-panel"
+            class="filter-panel overflow-hidden transition-all duration-300 ease-in-out"
+          >
+            <div class="filter-panel-content bg-base-300 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+            <!-- Genre Filter -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <span class="text-xs font-medium whitespace-nowrap">Genre</span>
+              <span class="hidden sm:inline text-xs opacity-30">|</span>
+              <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                {allCategories.map((category: string) => (
+                  <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      class="checkbox checkbox-xs checkbox-primary genre-filter rounded-sm"
+                      value={category}
+                    />
+                    <span class="text-xs">{category}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-            <span class="text-xs opacity-30">|</span>
-            <span class="text-xs font-medium">Price</span>
-            <div class="flex items-center gap-2">
-              <input
-                type="number"
-                id="min-price"
-                class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                value="4"
-                min="1"
-                max="30"
-                step="1"
-              />
-              <div class="dual-slider-container">
-                <div class="dual-slider-track"></div>
-                <div id="dual-slider-range" class="dual-slider-range"></div>
+
+            <span class="hidden sm:inline text-xs opacity-30">|</span>
+
+            <!-- Price Filter -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <span class="text-xs font-medium">Price</span>
+              <div class="flex items-center gap-2">
                 <input
-                  type="range"
-                  id="min-price-slider"
-                  class="dual-slider"
+                  type="number"
+                  id="min-price"
+                  class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  value="4"
                   min="1"
                   max="30"
-                  value="4"
                   step="1"
                 />
+                <div class="dual-slider-container">
+                  <div class="dual-slider-track"></div>
+                  <div id="dual-slider-range" class="dual-slider-range"></div>
+                  <input
+                    type="range"
+                    id="min-price-slider"
+                    class="dual-slider"
+                    min="1"
+                    max="30"
+                    value="4"
+                    step="1"
+                  />
+                  <input
+                    type="range"
+                    id="max-price-slider"
+                    class="dual-slider"
+                    min="1"
+                    max="30"
+                    value="10"
+                    step="1"
+                  />
+                </div>
                 <input
-                  type="range"
-                  id="max-price-slider"
-                  class="dual-slider"
+                  type="number"
+                  id="max-price"
+                  class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  value="10"
                   min="1"
                   max="30"
-                  value="10"
                   step="1"
                 />
               </div>
-              <input
-                type="number"
-                id="max-price"
-                class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                value="10"
-                min="1"
-                max="30"
-                step="1"
-              />
             </div>
           </div>
         </div>
       </div>
-
 
       <!-- Search Input with Keyboard Hint -->
       <label class="floating-label relative w-full sm:w-[calc((100%-2rem)/2)] md:w-[calc((100%-4rem)/3)] lg:w-[calc((100%-6rem)/4)] xl:w-[calc((100%-8rem)/5)]">
@@ -139,6 +149,7 @@ const allCategories = Array.from(
         <span>Search</span>
         <kbd id="search-kbd" class="kbd kbd-sm absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">/</kbd>
       </label>
+    </div>
     </div>
 
     <!-- Books Grid & No Results Message -->
@@ -173,6 +184,60 @@ const allCategories = Array.from(
 </BaseLayout>
 
 <style>
+  /* Mobile: expand downward and push content */
+  .filter-panel {
+    width: 100%;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0.5rem;
+    border-radius: 0.5rem;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  }
+
+  .filter-panel.open {
+    max-height: 500px;
+    opacity: 1;
+  }
+
+  .filter-panel-content {
+    border-radius: 0.5rem;
+  }
+
+  /* Desktop: expand to the right and position absolutely */
+  @media (min-width: 640px) {
+    .filter-panel {
+      position: absolute;
+      top: 0;
+      left: 28px;
+      width: 0;
+      max-height: none;
+      height: 2rem;
+      margin-top: 0;
+      border-radius: 0 0.5rem 0.5rem 0;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    }
+
+    .filter-panel.open {
+      width: auto;
+      max-height: none;
+      opacity: 1;
+    }
+
+    .filter-panel-content {
+      white-space: nowrap;
+      height: 2rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
   .dual-slider-container {
     position: relative;
     width: 9rem;
@@ -180,7 +245,7 @@ const allCategories = Array.from(
     display: flex;
     align-items: center;
   }
-  
+
   .dual-slider-track {
     position: absolute;
     width: 100%;
@@ -190,7 +255,7 @@ const allCategories = Array.from(
     border-radius: 0.125rem;
     pointer-events: none;
   }
-  
+
   .dual-slider-range {
     position: absolute;
     height: 0.25rem;
@@ -198,7 +263,7 @@ const allCategories = Array.from(
     border-radius: 0.125rem;
     pointer-events: none;
   }
-  
+
   .dual-slider {
     position: absolute;
     width: 100%;
@@ -209,7 +274,7 @@ const allCategories = Array.from(
     pointer-events: none;
     margin: 0;
   }
-  
+
   .dual-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -223,7 +288,7 @@ const allCategories = Array.from(
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
     transition: box-shadow 0.2s;
   }
-  
+
   .dual-slider::-moz-range-thumb {
     width: 1rem;
     height: 1rem;
@@ -235,21 +300,21 @@ const allCategories = Array.from(
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
     transition: box-shadow 0.2s;
   }
-  
+
   .dual-slider::-webkit-slider-thumb:hover,
   .dual-slider::-webkit-slider-thumb:active {
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
   }
-  
+
   .dual-slider::-moz-range-thumb:hover,
   .dual-slider::-moz-range-thumb:active {
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
   }
-  
+
   #min-price-slider {
     z-index: 1;
   }
-  
+
   #max-price-slider {
     z-index: 2;
   }
@@ -290,16 +355,9 @@ const allCategories = Array.from(
     isFilterOpen = !isFilterOpen;
 
     if (isFilterOpen) {
-      // Calculate width based on content
-      const content = filterPanel.querySelector('div');
-      if (content) {
-        const width = content.scrollWidth;
-        filterPanel.style.width = `${width}px`;
-      }
-      filterPanel.style.opacity = '1';
+      filterPanel.classList.add('open');
     } else {
-      filterPanel.style.width = '0';
-      filterPanel.style.opacity = '0';
+      filterPanel.classList.remove('open');
     }
   });
 
@@ -309,8 +367,7 @@ const allCategories = Array.from(
         !filterPanel.contains(e.target as Node) &&
         !filterToggle?.contains(e.target as Node)) {
       isFilterOpen = false;
-      filterPanel.style.width = '0';
-      filterPanel.style.opacity = '0';
+      filterPanel.classList.remove('open');
     }
   });
 </script>
@@ -346,7 +403,7 @@ const allCategories = Array.from(
   minPriceInput?.addEventListener('blur', () => {
     const value = parseInt(minPriceInput.value);
     const maxValue = parseInt(maxPriceInput.value);
-    
+
     if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value >= maxValue) {
       minPriceInput.value = String(DEFAULT_MIN);
       if (minPriceSlider) {
@@ -361,7 +418,7 @@ const allCategories = Array.from(
   maxPriceInput?.addEventListener('blur', () => {
     const value = parseInt(maxPriceInput.value);
     const minValue = parseInt(minPriceInput.value);
-    
+
     if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value <= minValue) {
       maxPriceInput.value = String(DEFAULT_MAX);
       if (maxPriceSlider) {
@@ -378,7 +435,7 @@ const allCategories = Array.from(
     const max = parseInt(maxPriceSlider.value);
     const minPercent = ((min - 1) / 29) * 100;
     const maxPercent = ((max - 1) / 29) * 100;
-    
+
     if (sliderRange) {
       sliderRange.style.left = `${minPercent}%`;
       sliderRange.style.width = `${maxPercent - minPercent}%`;
@@ -389,11 +446,11 @@ const allCategories = Array.from(
   minPriceSlider?.addEventListener('input', () => {
     const minVal = parseInt(minPriceSlider.value);
     const maxVal = parseInt(maxPriceSlider.value);
-    
+
     if (minVal >= maxVal) {
       minPriceSlider.value = String(maxVal - 1);
     }
-    
+
     if (minPriceInput) {
       minPriceInput.value = minPriceSlider.value;
       updateSliderRange();
@@ -405,11 +462,11 @@ const allCategories = Array.from(
   maxPriceSlider?.addEventListener('input', () => {
     const minVal = parseInt(minPriceSlider.value);
     const maxVal = parseInt(maxPriceSlider.value);
-    
+
     if (maxVal <= minVal) {
       maxPriceSlider.value = String(minVal + 1);
     }
-    
+
     if (maxPriceInput) {
       maxPriceInput.value = maxPriceSlider.value;
       updateSliderRange();
@@ -427,7 +484,7 @@ const allCategories = Array.from(
   minPriceInput?.addEventListener('change', () => {
     const minVal = parseInt(minPriceInput.value);
     const maxVal = parseInt(maxPriceInput.value);
-    
+
     if (!isNaN(minVal) && minVal >= MIN_PRICE && minVal < maxVal && minVal <= MAX_PRICE) {
       if (minPriceSlider) {
         minPriceSlider.value = minPriceInput.value;
@@ -447,7 +504,7 @@ const allCategories = Array.from(
   maxPriceInput?.addEventListener('change', () => {
     const minVal = parseInt(minPriceInput.value);
     const maxVal = parseInt(maxPriceInput.value);
-    
+
     if (!isNaN(maxVal) && maxVal > minVal && maxVal <= MAX_PRICE && maxVal >= MIN_PRICE) {
       if (maxPriceSlider) {
         maxPriceSlider.value = maxPriceInput.value;
@@ -462,16 +519,16 @@ const allCategories = Array.from(
 
   function filterBooks() {
     const query = searchInput.value.toLowerCase().trim();
-    
+
     // Get selected genres
     const selectedGenres = Array.from(genreFilters)
       .filter(checkbox => checkbox.checked)
       .map(checkbox => checkbox.value);
-    
+
     // Get price range
     const minPrice = parseFloat(minPriceInput?.value || '0');
     const maxPrice = parseFloat(maxPriceInput?.value || '999');
-    
+
     let visibleCount = 0;
 
     bookItems.forEach(item => {
@@ -479,20 +536,20 @@ const allCategories = Array.from(
       const author = (item as HTMLElement).dataset.author || '';
       const categoriesStr = (item as HTMLElement).dataset.categories || '[]';
       const categories = JSON.parse(categoriesStr);
-      
+
       // Check if matches search query
       const matchesSearch = !query || title.includes(query) || author.includes(query);
-      
+
       // Check if matches genre filter (if any selected)
-      const matchesGenre = selectedGenres.length === 0 || 
+      const matchesGenre = selectedGenres.length === 0 ||
         selectedGenres.some(genre => categories.includes(genre));
-      
+
       // Check if matches price range
       const bookPrice = parseFloat((item as HTMLElement).dataset.price || '0');
       const matchesPrice = bookPrice >= minPrice && bookPrice <= maxPrice;
-      
+
       const matches = matchesSearch && matchesGenre && matchesPrice;
-      
+
       (item as HTMLElement).style.display = matches ? '' : 'none';
       if (matches) visibleCount++;
     });
@@ -511,4 +568,3 @@ const allCategories = Array.from(
     checkbox.addEventListener('change', filterBooks);
   });
 </script>
-</system_warning>
