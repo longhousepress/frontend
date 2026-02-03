@@ -6,8 +6,7 @@ export async function getStaticPaths() {
   const response = await fetch(`${API_URL}/api/books?lang=eng`);
   const books = await response.json();
 
-  // Fetch full details for each book
-  const booksWithDetails = await Promise.all(
+  return await Promise.all(
     books.map(async (book: any) => {
       const detailResponse = await fetch(`${API_URL}/api/books/${book.book_slug}`);
       const bookData = await detailResponse.json();
@@ -17,26 +16,16 @@ export async function getStaticPaths() {
       };
     })
   );
-
-  return booksWithDetails;
 }
 
 const { bookData } = Astro.props;
-
-// Default to first edition for now (we'll add edition selection UI later)
 const defaultEdition = bookData.editions[0];
-
-// Format price helper (500 -> £5.00)
-const formatPrice = (price: number) => {
-  return `£${(price / 100).toFixed(2)}`;
-};
+const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
-    <!-- Two-column layout: cover left, details right -->
     <div class="grid sm:grid-cols-2 gap-8 mb-8 items-end">
-      <!-- Left column: Cover image -->
       <div class="flex flex-col items-center sm:items-start">
         <img
           src={defaultEdition.cover}
@@ -49,9 +38,9 @@ const formatPrice = (price: number) => {
         </button>
       </div>
 
-      <!-- Right column: Book details (flex layout with description in middle, buy button at bottom) -->
+
       <div class="flex flex-col" style="height: calc(320px * 9 / 6);">
-        <!-- Top section: Title & Author -->
+
         <div class="shrink-0">
           <details class="metadata-details mb-4">
             <summary class="flex items-center gap-2 cursor-pointer list-none mb-4">
@@ -61,7 +50,7 @@ const formatPrice = (price: number) => {
               </svg>
             </summary>
 
-            <!-- Metadata section -->
+
             <div class="pb-4">
               <div class="space-y-2 text-sm">
                 {defaultEdition.page_count && (
@@ -114,7 +103,7 @@ const formatPrice = (price: number) => {
                 </svg>
               </summary>
 
-              <!-- Author bio box -->
+
               <div class="mt-4 pb-0">
                 <p class="text-sm leading-relaxed opacity-80">{bookData.author_bio}</p>
                 <div class="divider my-0"></div>
@@ -125,7 +114,7 @@ const formatPrice = (price: number) => {
           )}
         </div>
 
-        <!-- Middle section: Scrollable description (flexes to fill space) -->
+
         <div class="flex-1 mb-6 relative overflow-hidden" id="description-wrapper">
           <div class="h-full overflow-y-auto pr-2 description-scroll relative" id="description-container">
             {defaultEdition.description && (
@@ -134,9 +123,9 @@ const formatPrice = (price: number) => {
               </div>
             )}
           </div>
-          <!-- Fade overlay when content overflows (positioned outside scroll container) -->
+
           <div class="description-fade pointer-events-none"></div>
-          <!-- Scroll indicator arrow (sticky at bottom) -->
+
           <button class="description-scroll-btn" id="scroll-indicator" aria-label="Scroll down">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
               <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
@@ -144,11 +133,11 @@ const formatPrice = (price: number) => {
           </button>
         </div>
 
-        <!-- Bottom section: Purchase info (pinned to bottom, aligned with cover) -->
+
         <div class="shrink-0">
-          <!-- Format buttons and Price - 2 column grid -->
+
           <div class="grid grid-cols-2 gap-4 mb-6">
-            <!-- Left column: Format buttons -->
+
             <div class="flex gap-2 items-center">
               <button class="btn btn-outline btn-sm">eBook</button>
               <div class="custom-tooltip">
@@ -161,7 +150,7 @@ const formatPrice = (price: number) => {
               </div>
             </div>
 
-            <!-- Right column: Price -->
+
             <div class="flex items-center justify-end">
               <div class="text-2xl leading-8 font-bold text-primary">
                 {formatPrice(defaultEdition.price)}
@@ -169,7 +158,7 @@ const formatPrice = (price: number) => {
             </div>
           </div>
 
-          <!-- Add to cart button -->
+
           <button
             id="add-to-cart-btn"
             data-book-id={defaultEdition.id}
@@ -189,7 +178,7 @@ const formatPrice = (price: number) => {
 
 
 
-    <!-- Categories section -->
+
     {bookData.categories && bookData.categories.length > 0 && (
       <>
         <div class="divider"></div>
@@ -205,14 +194,14 @@ const formatPrice = (price: number) => {
     )}
   </div>
 
-  <!-- Custom modal overlay for sample reader -->
+
   <div id="sample-modal" class="sample-modal hidden">
-    <!-- Backdrop -->
+
     <div class="sample-modal-backdrop"></div>
     
-    <!-- Modal content -->
+
     <div class="sample-modal-content">
-      <!-- Top control panel -->
+
       <div class="sample-control-panel bg-base-100 flex items-center justify-between px-4 py-1 rounded-t-lg">
         <span class="text-sm opacity-70">
           <span class="font-medium">{defaultEdition.title}</span> — Sample — <span id="page-indicator">Page 1 of 4</span>
@@ -220,12 +209,12 @@ const formatPrice = (price: number) => {
         <button id="close-modal-btn" class="btn btn-sm btn-ghost">✕</button>
       </div>
       
-      <!-- Sample page image -->
+
       <div class="flex justify-center bg-white p-4">
         <img id="page-image" src="" alt="Book sample page" class="max-h-[75vh] w-auto" />
       </div>
       
-      <!-- Bottom control panel -->
+
       <div class="sample-control-panel bg-base-100 flex items-center justify-between gap-4 px-4 py-1 rounded-b-lg">
         <button id="prev-page-btn" class="btn btn-xs" disabled>
           ←
@@ -246,24 +235,20 @@ const formatPrice = (price: number) => {
   </div>
 
   <style>
-    /* Collapsible details - rotate arrow when open */
     .metadata-details[open] .metadata-arrow,
     .author-details[open] .author-arrow {
       transform: rotate(180deg);
     }
 
-    /* Remove default details marker */
     .metadata-details summary::-webkit-details-marker,
     .author-details summary::-webkit-details-marker {
       display: none;
     }
 
-    /* Scroll container stacking */
     .description-scroll {
       z-index: 1;
     }
 
-    /* Custom tooltip */
     .custom-tooltip {
       position: relative;
       display: inline-flex;
@@ -297,7 +282,7 @@ const formatPrice = (price: number) => {
       opacity: 1;
     }
 
-    /* Custom modal styles */
+
     .sample-modal {
       position: fixed;
       top: 0;
@@ -346,7 +331,6 @@ const formatPrice = (price: number) => {
   </style>
 
   <script>
-    // Detect description overflow and show/hide scroll indicator
     const container = document.getElementById('description-container');
     const wrapper = document.getElementById('description-wrapper');
     const scrollBtn = document.getElementById('scroll-indicator');
@@ -357,27 +341,19 @@ const formatPrice = (price: number) => {
         wrapper.classList.toggle('has-overflow', hasOverflow);
       };
 
-      // Check on load and resize
       checkOverflow();
       window.addEventListener('resize', checkOverflow);
 
-      // Smooth scroll down on button click
       scrollBtn.addEventListener('click', () => {
         container.scrollBy({ top: 100, behavior: 'smooth' });
       });
 
-      // Hide indicator when scrolled to bottom
       container.addEventListener('scroll', () => {
         const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
-        if (isAtBottom) {
-          wrapper.classList.remove('has-overflow');
-        } else {
-          checkOverflow();
-        }
+        wrapper.classList.toggle('has-overflow', !isAtBottom && container.scrollHeight > container.clientHeight);
       });
     }
 
-    // Cart logic
     import { Cart } from '../../lib/cart';
     const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
 
@@ -392,7 +368,7 @@ const formatPrice = (price: number) => {
         language: btn.dataset.bookLanguage,
       });
 
-      // Show feedback by disabling button temporarily
+
       const originalText = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Successfully added';
@@ -403,7 +379,7 @@ const formatPrice = (price: number) => {
       }, 1000);
     });
 
-    // Sample reader logic
+
     const readSampleBtn = document.getElementById('read-sample-btn');
     const sampleModal = document.getElementById('sample-modal') as HTMLDivElement;
     const closeModalBtn = document.getElementById('close-modal-btn');
@@ -413,7 +389,7 @@ const formatPrice = (price: number) => {
     const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
     const pageSlider = document.getElementById('page-slider') as HTMLInputElement;
 
-    // Sample page images
+
     const samplePages = [
       '/sample-a5-2.webp',
       '/sample-a5-3.webp',
@@ -452,10 +428,10 @@ const formatPrice = (price: number) => {
       document.body.style.overflow = 'hidden';
     });
 
-    function closeModal() {
+    const closeModal = () => {
       sampleModal?.classList.add('hidden');
       document.body.style.overflow = '';
-    }
+    };
 
     closeModalBtn?.addEventListener('click', closeModal);
     modalBackdrop?.addEventListener('click', closeModal);
@@ -480,7 +456,7 @@ const formatPrice = (price: number) => {
       updateSampleDisplay();
     });
 
-    // Keyboard navigation (only when modal is open)
+
     document.addEventListener('keydown', (e) => {
       if (sampleModal?.classList.contains('hidden')) return;
       

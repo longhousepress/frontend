@@ -34,53 +34,29 @@ const {
   style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);"
   aria-label={`Book: ${title} by ${author}`}
 >
-  {href ? (
-    <a
-      href={href}
-      class="block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg"
-      aria-label={`View details for ${title} by ${author}`}
-    >
-      <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
-        <img
-          src={img}
-          alt={`Cover of ${title} by ${author}`}
-          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
-          loading="lazy"
-        />
-      </figure>
+  <a
+    href={href || undefined}
+    class={href ? "block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg" : "block rounded-lg pointer-events-none"}
+    aria-label={href ? `View details for ${title} by ${author}` : undefined}
+  >
+    <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
+      <img
+        src={img}
+        alt={`Cover of ${title} by ${author}`}
+        class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
+        loading="lazy"
+      />
+    </figure>
 
-      <div class="card-body pb-12">
-        <h3 class="text-sm opacity-70" style="color: var(--color-base-content);">{author}</h3>
-        <h2 class="card-title text-base leading-tight text-base-content">{title}</h2>
-      </div>
-
-      {price && (
-        <span class="absolute bottom-3 right-3 text-sm font-medium text-primary" aria-hidden="true">
-          {price}
-        </span>
-      )}
-    </a>
-  ) : (
-    <div class="block rounded-lg">
-      <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
-        <img
-          src={img}
-          alt={`Cover of ${title} by ${author}`}
-          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
-          loading="lazy"
-        />
-      </figure>
-
-      <div class="card-body pb-12">
-        <h3 class="text-sm opacity-70" style="color: var(--color-base-content);">{author}</h3>
-        <h2 class="card-title text-base leading-tight text-base-content">{title}</h2>
-      </div>
-
-      {price && (
-        <span class="absolute bottom-3 right-3 text-sm font-medium text-primary" aria-hidden="true">
-          {price}
-        </span>
-      )}
+    <div class="card-body pb-12">
+      <h3 class="text-sm opacity-70" style="color: var(--color-base-content);">{author}</h3>
+      <h2 class="card-title text-base leading-tight text-base-content">{title}</h2>
     </div>
-  )}
+
+    {price && (
+      <span class="absolute bottom-3 right-3 text-sm font-medium text-primary" aria-hidden="true">
+        {price}
+      </span>
+    )}
+  </a>
 </article>

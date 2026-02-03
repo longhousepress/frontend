@@ -112,13 +112,11 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       const clone = elements.template.content.cloneNode(true) as DocumentFragment;
       const li = clone.querySelector('li')!;
 
-      // Set data attributes for event delegation
       li.querySelectorAll('[data-action]').forEach(el => {
         (el as HTMLElement).dataset.id = String(item.id);
       });
       (li.querySelector('.item-quantity') as HTMLInputElement).dataset.id = String(item.id);
 
-      // Cover image
       const cover = li.querySelector('.item-cover') as HTMLImageElement;
       const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
       if (item.cover) {
@@ -130,7 +128,6 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
         noCover.classList.remove('hidden');
       }
 
-      // Book details
       const link = li.querySelector('.item-link') as HTMLAnchorElement;
       link.href = `/books/${item.slug}`;
       (li.querySelector('.item-title') as HTMLElement).textContent = item.title;
@@ -140,8 +137,6 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 
       (li.querySelector('.item-format') as HTMLElement).textContent = item.format || 'eBook';
       (li.querySelector('.item-language') as HTMLElement).textContent = item.language || 'English';
-
-      // Quantity
       (li.querySelector('.item-quantity') as HTMLInputElement).value = String(item.quantity);
 
       return li;
@@ -163,26 +158,19 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       elements.items.classList.remove('hidden');
       elements.footer.classList.remove('hidden');
 
-      // Clear existing items
       elements.items.innerHTML = '';
-
-      // Create and append elements from template
       items.forEach(item => {
-        const itemElement = createCartItemElement(item);
-        elements.items.appendChild(itemElement);
+        elements.items.appendChild(createCartItemElement(item));
       });
 
       elements.subtotal.textContent = formatPrice(Cart.getTotal());
     }
 
-    // Event delegation for buttons - ONLY SET UP ONCE
     elements.items.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      const btn = target.closest('button') as HTMLButtonElement;
+      const btn = (e.target as HTMLElement).closest('button') as HTMLButtonElement;
       if (!btn) return;
 
       const { action, id } = btn.dataset;
-      // dataset values are strings; convert to numeric id for Cart which uses numeric ids
       const idNum = id !== undefined ? Number(id) : NaN;
       if (Number.isNaN(idNum)) return;
 
@@ -196,16 +184,12 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       renderCart();
     });
 
-    // Event delegation for quantity input focus - select all on click
     elements.items.addEventListener('focus', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName !== 'INPUT') return;
-
-      const input = target as HTMLInputElement;
-      input.select();
+      if ((e.target as HTMLElement).tagName === 'INPUT') {
+        (e.target as HTMLInputElement).select();
+      }
     }, true);
 
-    // Event delegation for quantity inputs blur
     elements.items.addEventListener('blur', (e) => {
       const target = e.target as HTMLElement;
       if (target.tagName !== 'INPUT') return;
@@ -213,12 +197,12 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       const input = target as HTMLInputElement;
       const value = parseInt(input.value) || 1;
       const idNum = input.dataset.id !== undefined ? Number(input.dataset.id) : NaN;
-      if (Number.isNaN(idNum)) return;
-      Cart.updateQuantity(idNum, value);
-      renderCart();
+      if (!Number.isNaN(idNum)) {
+        Cart.updateQuantity(idNum, value);
+        renderCart();
+      }
     }, true);
 
-    // Checkout handler
     elements.checkout.addEventListener('click', async () => {
       const items = Cart.getItems().map(item => ({
         edition_id: Number(item.id),
@@ -257,10 +241,7 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       }
     });
 
-    // Initial render
     renderCart();
-
-    // Listen for cart updates
     window.addEventListener('cart-updated', renderCart);
   </script>
 </BaseLayout>

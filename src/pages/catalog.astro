@@ -3,12 +3,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 
 // Fetch books from API at build time (default to English editions)
-// NOTE: backend now returns Vec<Book> where each Book has an `editions: Edition[]`.
-// Normalize to a flat list of edition-like objects by defaulting to the first edition.
-// TODO: work on proper localization/edition-selection later.
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
 const response = await fetch(`${API_URL}/api/books?lang=eng`);
 const booksRaw = await response.json();
+
 // Normalize backend Book -> frontend edition-like shape (use first edition if present)
 const books = (booksRaw || []).map((book: any) => {
   const edition = (book.editions && book.editions.length > 0) ? book.editions[0] : null;
@@ -54,31 +52,28 @@ const formatPrice = (price: number) => {
 
     <!-- Books Grid & No Results Message -->
     <div class="max-w-7xl mx-auto">
-      <!-- Server-rendered book cards (replaced by JS on search/pagination) -->
+      <!-- Server-rendered book cards -->
       <div id="books-grid" class="grid gap-8 justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {books.map((edition: any) => (
-          <BookCard 
-            title={edition.title} 
-            author={edition.author} 
-            price={formatPrice(edition.price)} 
-            img={edition.cover}
-            href={`/books/${edition.book_slug}`}
-          />
+          <div 
+            class="book-item" 
+            data-title={edition.title.toLowerCase()} 
+            data-author={edition.author.toLowerCase()}
+          >
+            <BookCard 
+              title={edition.title} 
+              author={edition.author} 
+              price={formatPrice(edition.price)} 
+              img={edition.cover}
+              href={`/books/${edition.book_slug}`}
+            />
+          </div>
         ))}
       </div>
       
-      <!-- No Results Message (shown when search has no matches) -->
+      <!-- No Results Message -->
       <div id="no-results" class="hidden text-center py-12">
         <p class="text-lg opacity-70">No books found matching your search.</p>
-      </div>
-    </div>
-
-    <!-- Pagination Controls (hidden when <= 1 page) -->
-    <div class="flex justify-center mt-8">
-      <div id="pagination" class="join hidden">
-        <button id="prev-page" class="join-item btn btn-disabled">«</button>
-        <span id="page-info" class="join-item btn">Page 1</span>
-        <button id="next-page" class="join-item btn">»</button>
       </div>
     </div>
   </div>
@@ -86,11 +81,9 @@ const formatPrice = (price: number) => {
 
 <!-- Search Keyboard Shortcuts: / to focus, Esc to blur -->
 <script>
-  // Search keyboard shortcut - Press '/' to focus the search input
-  const searchInput = document.querySelector('input[type="text"][placeholder*="Search"]');
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
   const searchKbd = document.getElementById('search-kbd');
 
-  // Toggle kbd text on focus/blur
   searchInput?.addEventListener('focus', () => {
     if (searchKbd) searchKbd.textContent = 'Esc';
   });
@@ -100,144 +93,45 @@ const formatPrice = (price: number) => {
   });
 
   document.addEventListener('keydown', (e) => {
-    // Check if '/' is pressed and we're not already in an input/textarea
     if (e.key === '/' && document.activeElement && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
       e.preventDefault();
-      (searchInput as HTMLInputElement)?.focus();
+      searchInput?.focus();
     }
     
-    // Check if 'Escape' is pressed and we're in the search input
     if (e.key === 'Escape' && document.activeElement === searchInput) {
-      (searchInput as HTMLInputElement)?.blur();
+      searchInput?.blur();
     }
   });
 </script>
 
-<!-- Catalog Functionality: Search, Filter, Pagination -->
-<script define:vars={{ books }}>
-  // Configuration
-  const ITEMS_PER_PAGE = 10;
+<!-- Simple search filtering -->
+<script>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const booksGrid = document.getElementById('books-grid');
+  const noResults = document.getElementById('no-results');
+  const bookItems = document.querySelectorAll('.book-item');
 
-  // State
-  let currentPage = 1;
-  let filteredBooks = books;
-  let allBooks = books;
+  function filterBooks() {
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
 
-  // Utility function
-  function formatPrice(price) {
-    return `£${(price / 100).toFixed(2)}`;
-  }
-
-  // Render books to the grid
-  function renderBooks() {
-    const booksGrid = document.getElementById('books-grid');
-    const noResults = document.getElementById('no-results');
-    
-    if (!booksGrid || !noResults) return;
-    
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    const paginatedBooks = filteredBooks.slice(start, end);
-
-    if (filteredBooks.length === 0) {
-      booksGrid.classList.add('hidden');
-      noResults.classList.remove('hidden');
-    } else {
-      booksGrid.classList.remove('hidden');
-      noResults.classList.add('hidden');
+    bookItems.forEach(item => {
+      const title = (item as HTMLElement).dataset.title || '';
+      const author = (item as HTMLElement).dataset.author || '';
+      const matches = !query || title.includes(query) || author.includes(query);
       
-      booksGrid.innerHTML = paginatedBooks.map(book => `
-        <article class="card bg-base-100 w-full shadow-sm hover:shadow-md transition-shadow duration-150 relative rounded-lg border-2 border-base-300" style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);" aria-label="Book: ${book.title} by ${book.author}">
-          <a href="/books/${book.book_slug}" class="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg" aria-label="View details for ${book.title} by ${book.author}">
-            <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
-              <img src="${book.cover}" alt="Cover of ${book.title} by ${book.author}" class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75" loading="lazy" />
-            </figure>
-
-            <div class="card-body pb-12">
-              <h3 class="text-sm opacity-70" style="color: var(--color-base-content);">${book.author}</h3>
-              <h2 class="card-title text-base leading-tight text-base-content">${book.title}</h2>
-            </div>
-
-            <span class="absolute bottom-3 right-3 text-sm font-medium text-primary" aria-hidden="true">
-              ${formatPrice(book.price)}
-            </span>
-          </a>
-        </article>
-      `).join('');
-    }
-
-    updatePagination();
-  }
-
-  // Update pagination controls
-  function updatePagination() {
-    const prevBtn = document.getElementById('prev-page');
-    const nextBtn = document.getElementById('next-page');
-    const pageInfo = document.getElementById('page-info');
-    const paginationContainer = document.getElementById('pagination');
-    
-    if (!pageInfo || !prevBtn || !nextBtn) return;
-    
-    const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE) || 1;
-    
-    if (totalPages <= 1) {
-      paginationContainer?.classList.add('hidden');
-      return;
-    }
-    
-    paginationContainer?.classList.remove('hidden');
-    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-    
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage >= totalPages;
-    
-    prevBtn.classList.toggle('btn-disabled', prevBtn.disabled);
-    nextBtn.classList.toggle('btn-disabled', nextBtn.disabled);
-  }
-
-  // Handle search input
-  function handleSearch(query) {
-    const searchTerm = query.toLowerCase().trim();
-    
-    filteredBooks = searchTerm
-      ? allBooks.filter(book => 
-          book.title.toLowerCase().includes(searchTerm) ||
-          book.author.toLowerCase().includes(searchTerm)
-        )
-      : allBooks;
-    
-    currentPage = 1;
-    renderBooks();
-  }
-
-  // Initialize on page load
-  const searchInputEl = document.getElementById('search-input');
-  const prevBtn = document.getElementById('prev-page');
-  const nextBtn = document.getElementById('next-page');
-
-  if (searchInputEl && prevBtn && nextBtn) {
-    // Search input handler
-    searchInputEl.addEventListener('input', (e) => handleSearch(e.target.value));
-
-    // Pagination handlers
-    prevBtn.addEventListener('click', () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderBooks();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      (item as HTMLElement).style.display = matches ? '' : 'none';
+      if (matches) visibleCount++;
     });
 
-    nextBtn.addEventListener('click', () => {
-      const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE);
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderBooks();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    });
-
-    // Initial render
-    renderBooks();
+    if (visibleCount === 0) {
+      booksGrid?.classList.add('hidden');
+      noResults?.classList.remove('hidden');
+    } else {
+      booksGrid?.classList.remove('hidden');
+      noResults?.classList.add('hidden');
+    }
   }
+
+  searchInput?.addEventListener('input', filterBooks);
 </script>
