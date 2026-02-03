@@ -322,249 +322,264 @@ const allCategories = Array.from(
 
 <!-- Search Keyboard Shortcuts: / to focus, Esc to blur -->
 <script>
-  const searchInput = document.getElementById('search-input') as HTMLInputElement;
-  const searchKbd = document.getElementById('search-kbd');
+  function setupSearchShortcuts() {
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    const searchKbd = document.getElementById('search-kbd');
 
-  searchInput?.addEventListener('focus', () => {
-    if (searchKbd) searchKbd.textContent = 'Esc';
-  });
+    searchInput?.addEventListener('focus', () => {
+      if (searchKbd) searchKbd.textContent = 'Esc';
+    });
 
-  searchInput?.addEventListener('blur', () => {
-    if (searchKbd) searchKbd.textContent = '/';
-  });
+    searchInput?.addEventListener('blur', () => {
+      if (searchKbd) searchKbd.textContent = '/';
+    });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === '/' && document.activeElement && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-      e.preventDefault();
-      searchInput?.focus();
-    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        searchInput?.focus();
+      }
 
-    if (e.key === 'Escape' && document.activeElement === searchInput) {
-      searchInput?.blur();
-    }
-  });
+      if (e.key === 'Escape' && document.activeElement === searchInput) {
+        searchInput?.blur();
+      }
+    });
+  }
+
+  // Run on initial load and after view transitions
+  document.addEventListener('astro:page-load', setupSearchShortcuts);
 </script>
 
 <!-- Filter panel toggle -->
 <script>
-  const filterToggle = document.getElementById('filter-toggle');
-  const filterPanel = document.getElementById('filter-panel') as HTMLElement;
-  let isFilterOpen = false;
+  function setupFilterToggle() {
+    const filterToggle = document.getElementById('filter-toggle');
+    const filterPanel = document.getElementById('filter-panel') as HTMLElement;
+    let isFilterOpen = false;
 
-  filterToggle?.addEventListener('click', () => {
-    isFilterOpen = !isFilterOpen;
+    filterToggle?.addEventListener('click', () => {
+      isFilterOpen = !isFilterOpen;
 
-    if (isFilterOpen) {
-      filterPanel.classList.add('open');
-    } else {
-      filterPanel.classList.remove('open');
-    }
-  });
+      if (isFilterOpen) {
+        filterPanel.classList.add('open');
+      } else {
+        filterPanel.classList.remove('open');
+      }
+    });
 
-  // Close filter panel when clicking outside
-  document.addEventListener('click', (e) => {
-    if (isFilterOpen &&
-        !filterPanel.contains(e.target as Node) &&
-        !filterToggle?.contains(e.target as Node)) {
-      isFilterOpen = false;
-      filterPanel.classList.remove('open');
-    }
-  });
+    // Close filter panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (isFilterOpen &&
+          !filterPanel.contains(e.target as Node) &&
+          !filterToggle?.contains(e.target as Node)) {
+        isFilterOpen = false;
+        filterPanel.classList.remove('open');
+      }
+    });
+  }
+
+  // Run on initial load and after view transitions
+  document.addEventListener('astro:page-load', setupFilterToggle);
 </script>
 
 <!-- Search, genre, and price filtering -->
 <script>
-  const searchInput = document.getElementById('search-input') as HTMLInputElement;
-  const booksGrid = document.getElementById('books-grid');
-  const noResults = document.getElementById('no-results');
-  const bookItems = document.querySelectorAll('.book-item');
-  const genreFilters = document.querySelectorAll('.genre-filter') as NodeListOf<HTMLInputElement>;
-  const minPriceInput = document.getElementById('min-price') as HTMLInputElement;
-  const maxPriceInput = document.getElementById('max-price') as HTMLInputElement;
-  const minPriceSlider = document.getElementById('min-price-slider') as HTMLInputElement;
-  const maxPriceSlider = document.getElementById('max-price-slider') as HTMLInputElement;
-  const sliderRange = document.getElementById('dual-slider-range') as HTMLElement;
+  function setupFiltering() {
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    const booksGrid = document.getElementById('books-grid');
+    const noResults = document.getElementById('no-results');
+    const bookItems = document.querySelectorAll('.book-item');
+    const genreFilters = document.querySelectorAll('.genre-filter') as NodeListOf<HTMLInputElement>;
+    const minPriceInput = document.getElementById('min-price') as HTMLInputElement;
+    const maxPriceInput = document.getElementById('max-price') as HTMLInputElement;
+    const minPriceSlider = document.getElementById('min-price-slider') as HTMLInputElement;
+    const maxPriceSlider = document.getElementById('max-price-slider') as HTMLInputElement;
+    const sliderRange = document.getElementById('dual-slider-range') as HTMLElement;
 
-  const MIN_PRICE = 1;
-  const MAX_PRICE = 30;
-  const DEFAULT_MIN = 4;
-  const DEFAULT_MAX = 10;
+    const MIN_PRICE = 1;
+    const MAX_PRICE = 30;
+    const DEFAULT_MIN = 4;
+    const DEFAULT_MAX = 10;
 
-  // Clear input value on click
-  minPriceInput?.addEventListener('click', () => {
-    minPriceInput.select();
-  });
+    // Update the visual range fill
+    function updateSliderRange() {
+      const min = parseInt(minPriceSlider.value);
+      const max = parseInt(maxPriceSlider.value);
+      const minPercent = ((min - 1) / 29) * 100;
+      const maxPercent = ((max - 1) / 29) * 100;
 
-  maxPriceInput?.addEventListener('click', () => {
-    maxPriceInput.select();
-  });
-
-  // Validate min price input
-  minPriceInput?.addEventListener('blur', () => {
-    const value = parseInt(minPriceInput.value);
-    const maxValue = parseInt(maxPriceInput.value);
-
-    if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value >= maxValue) {
-      minPriceInput.value = String(DEFAULT_MIN);
-      if (minPriceSlider) {
-        minPriceSlider.value = String(DEFAULT_MIN);
-        updateSliderRange();
-        filterBooks();
+      if (sliderRange) {
+        sliderRange.style.left = `${minPercent}%`;
+        sliderRange.style.width = `${maxPercent - minPercent}%`;
       }
     }
-  });
 
-  // Validate max price input
-  maxPriceInput?.addEventListener('blur', () => {
-    const value = parseInt(maxPriceInput.value);
-    const minValue = parseInt(minPriceInput.value);
+    function filterBooks() {
+      const query = searchInput.value.toLowerCase().trim();
 
-    if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value <= minValue) {
-      maxPriceInput.value = String(DEFAULT_MAX);
-      if (maxPriceSlider) {
-        maxPriceSlider.value = String(DEFAULT_MAX);
-        updateSliderRange();
-        filterBooks();
+      // Get selected genres
+      const selectedGenres = Array.from(genreFilters)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+
+      // Get price range
+      const minPrice = parseFloat(minPriceInput?.value || '0');
+      const maxPrice = parseFloat(maxPriceInput?.value || '999');
+
+      let visibleCount = 0;
+
+      bookItems.forEach(item => {
+        const title = (item as HTMLElement).dataset.title || '';
+        const author = (item as HTMLElement).dataset.author || '';
+        const categoriesStr = (item as HTMLElement).dataset.categories || '[]';
+        const categories = JSON.parse(categoriesStr);
+
+        // Check if matches search query
+        const matchesSearch = !query || title.includes(query) || author.includes(query);
+
+        // Check if matches genre filter (if any selected)
+        const matchesGenre = selectedGenres.length === 0 ||
+          selectedGenres.some(genre => categories.includes(genre));
+
+        // Check if matches price range
+        const bookPrice = parseFloat((item as HTMLElement).dataset.price || '0');
+        const matchesPrice = bookPrice >= minPrice && bookPrice <= maxPrice;
+
+        const matches = matchesSearch && matchesGenre && matchesPrice;
+
+        (item as HTMLElement).style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+      });
+
+      if (visibleCount === 0) {
+        booksGrid?.classList.add('hidden');
+        noResults?.classList.remove('hidden');
+      } else {
+        booksGrid?.classList.remove('hidden');
+        noResults?.classList.add('hidden');
       }
     }
-  });
 
-  // Update the visual range fill
-  function updateSliderRange() {
-    const min = parseInt(minPriceSlider.value);
-    const max = parseInt(maxPriceSlider.value);
-    const minPercent = ((min - 1) / 29) * 100;
-    const maxPercent = ((max - 1) / 29) * 100;
-
-    if (sliderRange) {
-      sliderRange.style.left = `${minPercent}%`;
-      sliderRange.style.width = `${maxPercent - minPercent}%`;
-    }
-  }
-
-  // Sync min slider with min price input
-  minPriceSlider?.addEventListener('input', () => {
-    const minVal = parseInt(minPriceSlider.value);
-    const maxVal = parseInt(maxPriceSlider.value);
-
-    if (minVal >= maxVal) {
-      minPriceSlider.value = String(maxVal - 1);
-    }
-
-    if (minPriceInput) {
-      minPriceInput.value = minPriceSlider.value;
-      updateSliderRange();
-      filterBooks();
-    }
-  });
-
-  // Sync max slider with max price input
-  maxPriceSlider?.addEventListener('input', () => {
-    const minVal = parseInt(minPriceSlider.value);
-    const maxVal = parseInt(maxPriceSlider.value);
-
-    if (maxVal <= minVal) {
-      maxPriceSlider.value = String(minVal + 1);
-    }
-
-    if (maxPriceInput) {
-      maxPriceInput.value = maxPriceSlider.value;
-      updateSliderRange();
-      filterBooks();
-    }
-  });
-
-  // Sync min price input with slider (on Enter key)
-  minPriceInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      minPriceInput.blur();
-    }
-  });
-
-  minPriceInput?.addEventListener('change', () => {
-    const minVal = parseInt(minPriceInput.value);
-    const maxVal = parseInt(maxPriceInput.value);
-
-    if (!isNaN(minVal) && minVal >= MIN_PRICE && minVal < maxVal && minVal <= MAX_PRICE) {
-      if (minPriceSlider) {
-        minPriceSlider.value = minPriceInput.value;
-        updateSliderRange();
-        filterBooks();
-      }
-    }
-  });
-
-  // Sync max price input with slider (on Enter key)
-  maxPriceInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      maxPriceInput.blur();
-    }
-  });
-
-  maxPriceInput?.addEventListener('change', () => {
-    const minVal = parseInt(minPriceInput.value);
-    const maxVal = parseInt(maxPriceInput.value);
-
-    if (!isNaN(maxVal) && maxVal > minVal && maxVal <= MAX_PRICE && maxVal >= MIN_PRICE) {
-      if (maxPriceSlider) {
-        maxPriceSlider.value = maxPriceInput.value;
-        updateSliderRange();
-        filterBooks();
-      }
-    }
-  });
-
-  // Initialize slider range on page load
-  updateSliderRange();
-
-  function filterBooks() {
-    const query = searchInput.value.toLowerCase().trim();
-
-    // Get selected genres
-    const selectedGenres = Array.from(genreFilters)
-      .filter(checkbox => checkbox.checked)
-      .map(checkbox => checkbox.value);
-
-    // Get price range
-    const minPrice = parseFloat(minPriceInput?.value || '0');
-    const maxPrice = parseFloat(maxPriceInput?.value || '999');
-
-    let visibleCount = 0;
-
-    bookItems.forEach(item => {
-      const title = (item as HTMLElement).dataset.title || '';
-      const author = (item as HTMLElement).dataset.author || '';
-      const categoriesStr = (item as HTMLElement).dataset.categories || '[]';
-      const categories = JSON.parse(categoriesStr);
-
-      // Check if matches search query
-      const matchesSearch = !query || title.includes(query) || author.includes(query);
-
-      // Check if matches genre filter (if any selected)
-      const matchesGenre = selectedGenres.length === 0 ||
-        selectedGenres.some(genre => categories.includes(genre));
-
-      // Check if matches price range
-      const bookPrice = parseFloat((item as HTMLElement).dataset.price || '0');
-      const matchesPrice = bookPrice >= minPrice && bookPrice <= maxPrice;
-
-      const matches = matchesSearch && matchesGenre && matchesPrice;
-
-      (item as HTMLElement).style.display = matches ? '' : 'none';
-      if (matches) visibleCount++;
+    // Clear input value on click
+    minPriceInput?.addEventListener('click', () => {
+      minPriceInput.select();
     });
 
-    if (visibleCount === 0) {
-      booksGrid?.classList.add('hidden');
-      noResults?.classList.remove('hidden');
-    } else {
-      booksGrid?.classList.remove('hidden');
-      noResults?.classList.add('hidden');
-    }
+    maxPriceInput?.addEventListener('click', () => {
+      maxPriceInput.select();
+    });
+
+    // Validate min price input
+    minPriceInput?.addEventListener('blur', () => {
+      const value = parseInt(minPriceInput.value);
+      const maxValue = parseInt(maxPriceInput.value);
+
+      if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value >= maxValue) {
+        minPriceInput.value = String(DEFAULT_MIN);
+        if (minPriceSlider) {
+          minPriceSlider.value = String(DEFAULT_MIN);
+          updateSliderRange();
+          filterBooks();
+        }
+      }
+    });
+
+    // Validate max price input
+    maxPriceInput?.addEventListener('blur', () => {
+      const value = parseInt(maxPriceInput.value);
+      const minValue = parseInt(minPriceInput.value);
+
+      if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value <= minValue) {
+        maxPriceInput.value = String(DEFAULT_MAX);
+        if (maxPriceSlider) {
+          maxPriceSlider.value = String(DEFAULT_MAX);
+          updateSliderRange();
+          filterBooks();
+        }
+      }
+    });
+
+    // Sync min slider with min price input
+    minPriceSlider?.addEventListener('input', () => {
+      const minVal = parseInt(minPriceSlider.value);
+      const maxVal = parseInt(maxPriceSlider.value);
+
+      if (minVal >= maxVal) {
+        minPriceSlider.value = String(maxVal - 1);
+      }
+
+      if (minPriceInput) {
+        minPriceInput.value = minPriceSlider.value;
+        updateSliderRange();
+        filterBooks();
+      }
+    });
+
+    // Sync max slider with max price input
+    maxPriceSlider?.addEventListener('input', () => {
+      const minVal = parseInt(minPriceSlider.value);
+      const maxVal = parseInt(maxPriceSlider.value);
+
+      if (maxVal <= minVal) {
+        maxPriceSlider.value = String(minVal + 1);
+      }
+
+      if (maxPriceInput) {
+        maxPriceInput.value = maxPriceSlider.value;
+        updateSliderRange();
+        filterBooks();
+      }
+    });
+
+    // Sync min price input with slider (on Enter key)
+    minPriceInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        minPriceInput.blur();
+      }
+    });
+
+    minPriceInput?.addEventListener('change', () => {
+      const minVal = parseInt(minPriceInput.value);
+      const maxVal = parseInt(maxPriceInput.value);
+
+      if (!isNaN(minVal) && minVal >= MIN_PRICE && minVal < maxVal && minVal <= MAX_PRICE) {
+        if (minPriceSlider) {
+          minPriceSlider.value = minPriceInput.value;
+          updateSliderRange();
+          filterBooks();
+        }
+      }
+    });
+
+    // Sync max price input with slider (on Enter key)
+    maxPriceInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        maxPriceInput.blur();
+      }
+    });
+
+    maxPriceInput?.addEventListener('change', () => {
+      const minVal = parseInt(minPriceInput.value);
+      const maxVal = parseInt(maxPriceInput.value);
+
+      if (!isNaN(maxVal) && maxVal > minVal && maxVal <= MAX_PRICE && maxVal >= MIN_PRICE) {
+        if (maxPriceSlider) {
+          maxPriceSlider.value = maxPriceInput.value;
+          updateSliderRange();
+          filterBooks();
+        }
+      }
+    });
+
+    // Initialize slider range on page load
+    updateSliderRange();
+
+    searchInput?.addEventListener('input', filterBooks);
+    genreFilters.forEach(checkbox => {
+      checkbox.addEventListener('change', filterBooks);
+    });
   }
 
-  searchInput?.addEventListener('input', filterBooks);
-  genreFilters.forEach(checkbox => {
-    checkbox.addEventListener('change', filterBooks);
-  });
+  // Run on initial load and after view transitions
+  document.addEventListener('astro:page-load', setupFiltering);
 </script>
