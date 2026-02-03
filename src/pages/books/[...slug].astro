@@ -339,143 +339,148 @@ const samplePages = bookData.sample_pages || defaultEdition.sample_pages || [];
   </style>
 
   <script>
-    const container = document.getElementById('description-container');
-    const wrapper = document.getElementById('description-wrapper');
-    const scrollBtn = document.getElementById('scroll-indicator');
+    import { Cart } from '../../lib/cart';
 
-    if (container && wrapper && scrollBtn) {
-      const checkOverflow = () => {
-        const hasOverflow = container.scrollHeight > container.clientHeight;
-        wrapper.classList.toggle('has-overflow', hasOverflow);
+    function setupBookDetailPage() {
+      const container = document.getElementById('description-container');
+      const wrapper = document.getElementById('description-wrapper');
+      const scrollBtn = document.getElementById('scroll-indicator');
+
+      if (container && wrapper && scrollBtn) {
+        const checkOverflow = () => {
+          const hasOverflow = container.scrollHeight > container.clientHeight;
+          wrapper.classList.toggle('has-overflow', hasOverflow);
+        };
+
+        checkOverflow();
+        window.addEventListener('resize', checkOverflow);
+
+        scrollBtn.addEventListener('click', () => {
+          container.scrollBy({ top: 100, behavior: 'smooth' });
+        });
+
+        container.addEventListener('scroll', () => {
+          const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
+          wrapper.classList.toggle('has-overflow', !isAtBottom && container.scrollHeight > container.clientHeight);
+        });
+      }
+
+      const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+
+      btn?.addEventListener('click', () => {
+        Cart.addItem({
+          id: Number(btn.dataset.bookId!),
+          title: btn.dataset.bookTitle!,
+          price: parseInt(btn.dataset.bookPrice!),
+          cover: btn.dataset.bookCover,
+          slug: btn.dataset.bookSlug,
+          format: btn.dataset.bookFormat,
+          language: btn.dataset.bookLanguage,
+        });
+
+
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Successfully added';
+
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }, 1000);
+      });
+
+
+      const readSampleBtn = document.getElementById('read-sample-btn');
+      const sampleModal = document.getElementById('sample-modal') as HTMLDivElement;
+      const closeModalBtn = document.getElementById('close-modal-btn');
+      const modalBackdrop = document.querySelector('.sample-modal-backdrop') as HTMLElement;
+      const pageImage = document.getElementById('page-image') as HTMLImageElement;
+      const prevBtn = document.getElementById('prev-page-btn') as HTMLButtonElement;
+      const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
+      const pageSlider = document.getElementById('page-slider') as HTMLInputElement;
+
+      // Get sample pages from data attribute
+      const samplePagesData = readSampleBtn?.getAttribute('data-sample-pages');
+      const samplePages: string[] = samplePagesData ? JSON.parse(samplePagesData) : [];
+      let currentPageIndex = 0;
+
+      function updateSampleDisplay() {
+        if (!pageImage) return;
+        
+        // Display current page image
+        pageImage.src = samplePages[currentPageIndex] || '';
+        pageImage.alt = `Book sample page ${currentPageIndex + 1}`;
+        
+        // Update button states
+        const totalPages = samplePages.length;
+        prevBtn.disabled = currentPageIndex === 0;
+        nextBtn.disabled = currentPageIndex >= totalPages - 1;
+        
+        // Update slider
+        pageSlider.value = currentPageIndex.toString();
+        
+        // Update page indicator
+        const pageIndicator = document.getElementById('page-indicator');
+        if (pageIndicator) {
+          pageIndicator.textContent = `Page ${currentPageIndex + 1} of ${totalPages}`;
+        }
+      }
+
+      readSampleBtn?.addEventListener('click', () => {
+        if (samplePages.length === 0) return;
+        currentPageIndex = 0;
+        pageSlider.max = (samplePages.length - 1).toString();
+        updateSampleDisplay();
+        sampleModal?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      });
+
+      const closeModal = () => {
+        sampleModal?.classList.add('hidden');
+        document.body.style.overflow = '';
       };
 
-      checkOverflow();
-      window.addEventListener('resize', checkOverflow);
+      closeModalBtn?.addEventListener('click', closeModal);
+      modalBackdrop?.addEventListener('click', closeModal);
 
-      scrollBtn.addEventListener('click', () => {
-        container.scrollBy({ top: 100, behavior: 'smooth' });
+      prevBtn?.addEventListener('click', () => {
+        if (currentPageIndex > 0) {
+          currentPageIndex--;
+          updateSampleDisplay();
+        }
       });
 
-      container.addEventListener('scroll', () => {
-        const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
-        wrapper.classList.toggle('has-overflow', !isAtBottom && container.scrollHeight > container.clientHeight);
+      nextBtn?.addEventListener('click', () => {
+        if (currentPageIndex < samplePages.length - 1) {
+          currentPageIndex++;
+          updateSampleDisplay();
+        }
+      });
+
+      pageSlider?.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        currentPageIndex = parseInt(target.value);
+        updateSampleDisplay();
+      });
+
+
+      document.addEventListener('keydown', (e) => {
+        if (sampleModal?.classList.contains('hidden')) return;
+        
+        if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
+          e.preventDefault();
+          prevBtn.click();
+        } else if (e.key === 'ArrowRight' && !nextBtn.disabled) {
+          e.preventDefault();
+          nextBtn.click();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          closeModal();
+        }
       });
     }
 
-    import { Cart } from '../../lib/cart';
-    const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
-
-    btn?.addEventListener('click', () => {
-      Cart.addItem({
-        id: Number(btn.dataset.bookId!),
-        title: btn.dataset.bookTitle!,
-        price: parseInt(btn.dataset.bookPrice!),
-        cover: btn.dataset.bookCover,
-        slug: btn.dataset.bookSlug,
-        format: btn.dataset.bookFormat,
-        language: btn.dataset.bookLanguage,
-      });
-
-
-      const originalText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Successfully added';
-
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      }, 1000);
-    });
-
-
-    const readSampleBtn = document.getElementById('read-sample-btn');
-    const sampleModal = document.getElementById('sample-modal') as HTMLDivElement;
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const modalBackdrop = document.querySelector('.sample-modal-backdrop') as HTMLElement;
-    const pageImage = document.getElementById('page-image') as HTMLImageElement;
-    const prevBtn = document.getElementById('prev-page-btn') as HTMLButtonElement;
-    const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
-    const pageSlider = document.getElementById('page-slider') as HTMLInputElement;
-
-    // Get sample pages from data attribute
-    const samplePagesData = readSampleBtn?.getAttribute('data-sample-pages');
-    const samplePages: string[] = samplePagesData ? JSON.parse(samplePagesData) : [];
-    let currentPageIndex = 0;
-
-    function updateSampleDisplay() {
-      if (!pageImage) return;
-      
-      // Display current page image
-      pageImage.src = samplePages[currentPageIndex] || '';
-      pageImage.alt = `Book sample page ${currentPageIndex + 1}`;
-      
-      // Update button states
-      const totalPages = samplePages.length;
-      prevBtn.disabled = currentPageIndex === 0;
-      nextBtn.disabled = currentPageIndex >= totalPages - 1;
-      
-      // Update slider
-      pageSlider.value = currentPageIndex.toString();
-      
-      // Update page indicator
-      const pageIndicator = document.getElementById('page-indicator');
-      if (pageIndicator) {
-        pageIndicator.textContent = `Page ${currentPageIndex + 1} of ${totalPages}`;
-      }
-    }
-
-    readSampleBtn?.addEventListener('click', () => {
-      if (samplePages.length === 0) return;
-      currentPageIndex = 0;
-      pageSlider.max = (samplePages.length - 1).toString();
-      updateSampleDisplay();
-      sampleModal?.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    });
-
-    const closeModal = () => {
-      sampleModal?.classList.add('hidden');
-      document.body.style.overflow = '';
-    };
-
-    closeModalBtn?.addEventListener('click', closeModal);
-    modalBackdrop?.addEventListener('click', closeModal);
-
-    prevBtn?.addEventListener('click', () => {
-      if (currentPageIndex > 0) {
-        currentPageIndex--;
-        updateSampleDisplay();
-      }
-    });
-
-    nextBtn?.addEventListener('click', () => {
-      if (currentPageIndex < samplePages.length - 1) {
-        currentPageIndex++;
-        updateSampleDisplay();
-      }
-    });
-
-    pageSlider?.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement;
-      currentPageIndex = parseInt(target.value);
-      updateSampleDisplay();
-    });
-
-
-    document.addEventListener('keydown', (e) => {
-      if (sampleModal?.classList.contains('hidden')) return;
-      
-      if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
-        e.preventDefault();
-        prevBtn.click();
-      } else if (e.key === 'ArrowRight' && !nextBtn.disabled) {
-        e.preventDefault();
-        nextBtn.click();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        closeModal();
-      }
-    });
-
+    // Run on initial load and after view transitions
+    document.addEventListener('astro:page-load', setupBookDetailPage);
   </script>
 </BaseLayout>
