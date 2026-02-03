@@ -32,18 +32,63 @@ const books = (booksRaw || []).map((book: any) => {
 const formatPrice = (price: number) => {
   return `£${(price / 100).toFixed(2)}`;
 };
+
+// Extract all unique categories from books
+const allCategories = Array.from(
+  new Set(
+    books.flatMap((book: any) => book.categories || [])
+  )
+).sort();
 ---
 
 <BaseLayout title="Catalog">
   <div class="py-6">
-    <!-- Header Section: Title & Search -->
-    <div class="max-w-7xl mx-auto mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-      <div>
-        <h2 class="text-2xl font-semibold">Catalog</h2>
+    <!-- Centered Title -->
+    <div class="max-w-7xl mx-auto mb-6 text-center">
+      <h2 class="text-2xl font-semibold">Catalog</h2>
+    </div>
+
+    <!-- Search with Filter -->
+    <div class="max-w-7xl mx-auto mb-6 flex justify-between items-center">
+      <!-- Filter Button & Expandable Panel -->
+      <div class="relative flex items-center h-8">
+        <!-- Filter Button -->
+        <button
+          id="filter-toggle"
+          class="btn btn-sm btn-square h-8 min-h-8 shrink-0 relative z-10"
+          aria-label="Toggle filters"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+          </svg>
+        </button>
+
+        <!-- Expandable Filter Panel -->
+        <div
+          id="filter-panel"
+          class="overflow-hidden transition-all duration-300 ease-in-out rounded-r-lg absolute"
+          style="width: 0; opacity: 0; left: 28px;"
+        >
+          <div class="bg-base-300 pr-3 pl-3 whitespace-nowrap flex items-center gap-3 h-8">
+            <span class="text-xs font-medium">Genre</span>
+            <div class="flex items-center gap-3">
+              {allCategories.map((category: string) => (
+                <label class="flex items-center gap-1 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-xs genre-filter"
+                    value={category}
+                  />
+                  <span class="text-xs">{category}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-      
+
       <!-- Search Input with Keyboard Hint -->
-      <label class="floating-label w-full sm:w-[calc((100%-2rem)/2)] md:w-[calc((100%-4rem)/3)] lg:w-[calc((100%-6rem)/4)] xl:w-[calc((100%-8rem)/5)] relative">
+      <label class="floating-label relative w-full sm:w-[calc((100%-2rem)/2)] md:w-[calc((100%-4rem)/3)] lg:w-[calc((100%-6rem)/4)] xl:w-[calc((100%-8rem)/5)]">
         <input type="text" id="search-input" placeholder="Search books..." class="input input-sm pr-10 w-full" />
         <span>Search</span>
         <kbd id="search-kbd" class="kbd kbd-sm absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">/</kbd>
@@ -55,22 +100,23 @@ const formatPrice = (price: number) => {
       <!-- Server-rendered book cards -->
       <div id="books-grid" class="grid gap-8 justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {books.map((edition: any) => (
-          <div 
-            class="book-item" 
-            data-title={edition.title.toLowerCase()} 
+          <div
+            class="book-item"
+            data-title={edition.title.toLowerCase()}
             data-author={edition.author.toLowerCase()}
+            data-categories={JSON.stringify(edition.categories || [])}
           >
-            <BookCard 
-              title={edition.title} 
-              author={edition.author} 
-              price={formatPrice(edition.price)} 
+            <BookCard
+              title={edition.title}
+              author={edition.author}
+              price={formatPrice(edition.price)}
               img={edition.cover}
               href={`/books/${edition.book_slug}`}
             />
           </div>
         ))}
       </div>
-      
+
       <!-- No Results Message -->
       <div id="no-results" class="hidden text-center py-12">
         <p class="text-lg opacity-70">No books found matching your search.</p>
@@ -97,29 +143,81 @@ const formatPrice = (price: number) => {
       e.preventDefault();
       searchInput?.focus();
     }
-    
+
     if (e.key === 'Escape' && document.activeElement === searchInput) {
       searchInput?.blur();
     }
   });
 </script>
 
-<!-- Simple search filtering -->
+<!-- Filter panel toggle -->
+<script>
+  const filterToggle = document.getElementById('filter-toggle');
+  const filterPanel = document.getElementById('filter-panel') as HTMLElement;
+  let isFilterOpen = false;
+
+  filterToggle?.addEventListener('click', () => {
+    isFilterOpen = !isFilterOpen;
+
+    if (isFilterOpen) {
+      // Calculate width based on content
+      const content = filterPanel.querySelector('div');
+      if (content) {
+        const width = content.scrollWidth;
+        filterPanel.style.width = `${width}px`;
+      }
+      filterPanel.style.opacity = '1';
+    } else {
+      filterPanel.style.width = '0';
+      filterPanel.style.opacity = '0';
+    }
+  });
+
+  // Close filter panel when clicking outside
+  document.addEventListener('click', (e) => {
+    if (isFilterOpen &&
+        !filterPanel.contains(e.target as Node) &&
+        !filterToggle?.contains(e.target as Node)) {
+      isFilterOpen = false;
+      filterPanel.style.width = '0';
+      filterPanel.style.opacity = '0';
+    }
+  });
+</script>
+
+<!-- Search and genre filtering -->
 <script>
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   const booksGrid = document.getElementById('books-grid');
   const noResults = document.getElementById('no-results');
   const bookItems = document.querySelectorAll('.book-item');
+  const genreFilters = document.querySelectorAll('.genre-filter') as NodeListOf<HTMLInputElement>;
 
   function filterBooks() {
     const query = searchInput.value.toLowerCase().trim();
+
+    // Get selected genres
+    const selectedGenres = Array.from(genreFilters)
+      .filter(checkbox => checkbox.checked)
+      .map(checkbox => checkbox.value);
+
     let visibleCount = 0;
 
     bookItems.forEach(item => {
       const title = (item as HTMLElement).dataset.title || '';
       const author = (item as HTMLElement).dataset.author || '';
-      const matches = !query || title.includes(query) || author.includes(query);
-      
+      const categoriesStr = (item as HTMLElement).dataset.categories || '[]';
+      const categories = JSON.parse(categoriesStr);
+
+      // Check if matches search query
+      const matchesSearch = !query || title.includes(query) || author.includes(query);
+
+      // Check if matches genre filter (if any selected)
+      const matchesGenre = selectedGenres.length === 0 ||
+        selectedGenres.some(genre => categories.includes(genre));
+
+      const matches = matchesSearch && matchesGenre;
+
       (item as HTMLElement).style.display = matches ? '' : 'none';
       if (matches) visibleCount++;
     });
@@ -134,4 +232,8 @@ const formatPrice = (price: number) => {
   }
 
   searchInput?.addEventListener('input', filterBooks);
+  genreFilters.forEach(checkbox => {
+    checkbox.addEventListener('change', filterBooks);
+  });
 </script>
+</system_warning>
