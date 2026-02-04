@@ -1,0 +1,15 @@
+---
+interface Props {
+  label: string;
+  value: string | number | null | undefined;
+}
+
+const { label, value } = Astro.props;
+---
+
+{value && (
+  <div class="flex justify-between">
+    <span class="opacity-70">{label}:</span>
+    <span class="font-medium">{value}</span>
+  </div>
+)}
