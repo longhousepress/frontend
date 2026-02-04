@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 
 // Fetch books from API at build time (default to English editions)
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
 const response = await fetch(`${API_URL}/api/books?lang=eng`);
 const booksRaw = await response.json();
 

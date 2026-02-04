@@ -2,7 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 export async function getStaticPaths() {
-  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
   const response = await fetch(`${API_URL}/api/books?lang=eng`);
   const books = await response.json();
 
@@ -21,7 +21,9 @@ export async function getStaticPaths() {
 const { bookData } = Astro.props;
 const defaultEdition = bookData.editions[0];
 const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
-const samplePages = bookData.sample_pages || defaultEdition.sample_pages || [];
+const samplePages = defaultEdition.samples 
+  ? defaultEdition.samples.map((sample: any) => sample.path)
+  : [];
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
