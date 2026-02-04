@@ -1,4 +1,5 @@
 import { CURRENCY_SYMBOL, PRICE_DIVISOR } from './constants';
+import type { Price } from '../types/book';
 
 /**
  * Formats a price from cents to a currency string with symbol
@@ -34,4 +35,18 @@ export function getUniqueValues<T>(array: T[]): T[] {
  */
 export function extractSamplePaths(samples: { path: string }[] | null | undefined): string[] {
   return samples?.map(sample => sample.path) ?? [];
+}
+
+/**
+ * Gets the price amount for a specific currency from a prices array
+ * @param prices - Array of price objects with currency and amount
+ * @param currency - Currency code to look for (e.g., 'GBP', 'EUR', 'USD')
+ * @returns Price amount in cents/pence, or null if currency not found
+ * @example
+ * getPriceForCurrency([{currency: 'GBP', amount: 500}, {currency: 'EUR', amount: 600}], 'GBP') // 500
+ * getPriceForCurrency([{currency: 'EUR', amount: 600}], 'GBP') // null
+ */
+export function getPriceForCurrency(prices: Price[], currency: string): number | null {
+  const priceObj = prices.find(p => p.currency === currency);
+  return priceObj ? priceObj.amount : null;
 }

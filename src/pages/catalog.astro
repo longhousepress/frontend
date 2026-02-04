@@ -1,32 +1,54 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
+import { SELECTED_CURRENCY } from '../lib/constants';
+import { getPriceForCurrency } from '../lib/utils';
 
-// Fetch books from API at build time (default to English editions)
+// Fetch ALL books from API at build time (no language filtering - backend returns all editions)
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
-const response = await fetch(`${API_URL}/api/books?lang=eng`);
+const response = await fetch(`${API_URL}/api/books`);
 const booksRaw = await response.json();
 
-// Normalize backend Book -> frontend edition-like shape (use first edition if present)
-const books = (booksRaw || []).map((book: any) => {
-  const edition = (book.editions && book.editions.length > 0) ? book.editions[0] : null;
-  return {
-    id: edition?.id ?? book.id,
-    title: edition?.title ?? book.title,
-    author: edition?.author_name ?? book.author,
-    price: edition?.price ?? 0,
-    cover: edition?.cover ?? '',
-    description: edition?.description ?? null,
-    book_slug: book.book_slug,
-    categories: edition?.categories ?? book.categories ?? [],
-    format: edition?.format ?? 'eBook',
-    language: edition?.language ?? book.language ?? null,
-    page_count: edition?.page_count ?? book.page_count ?? null,
-    translator: edition?.translator_name ?? null,
-    publication_date: edition?.publication_date ?? null,
-    isbn: edition?.isbn ?? null,
-  };
-});
+// Flatten all editions from all books that have pricing in the selected currency
+// This will show ALL editions (across all languages/formats) that have GBP pricing
+// When a book has multiple editions (e.g., English and Korean), both will appear if both have GBP prices
+// TODO: When currency selector is added:
+//   1. Replace SELECTED_CURRENCY with a reactive currency state/prop
+//   2. The filtering logic below will automatically work with the new currency
+//   3. May want to add additional filtering for language/format preferences
+const books = (booksRaw || [])
+  .flatMap((book: any) => {
+    // Get all editions that have a price in the selected currency
+    return (book.editions || [])
+      .map((edition: any) => {
+        // Get price for selected currency from the prices array
+        const price = edition.prices ? getPriceForCurrency(edition.prices, SELECTED_CURRENCY) : null;
+        
+        // Skip this edition if no price available for selected currency
+        // This means books without GBP pricing won't appear in the catalog at all
+        if (price === null) {
+          return null;
+        }
+        
+        return {
+          id: edition.id,
+          title: edition.title,
+          author: edition.author_name,
+          price: price,
+          cover: edition.cover,
+          description: edition.description,
+          book_slug: book.book_slug,
+          categories: edition.categories || book.categories || [],
+          format: edition.format || 'eBook',
+          language: edition.language || null,
+          page_count: edition.page_count || null,
+          translator: edition.translator_name || null,
+          publication_date: edition.publication_date || null,
+          isbn: edition.isbn || null,
+        };
+      })
+      .filter((edition: any) => edition !== null);
+  });
 
 // Format price helper for server-side rendering (500 -> £5.00)
 const formatPrice = (price: number) => {

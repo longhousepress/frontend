@@ -16,7 +16,8 @@ export interface Edition {
   title: string;
   author_name: string;
   author_bio: string | null;
-  price: number;
+  // @deprecated Use prices array instead - this field is kept for backwards compatibility
+  price?: number;
   prices: Price[];
   cover: string;
   cover_name: string | null;

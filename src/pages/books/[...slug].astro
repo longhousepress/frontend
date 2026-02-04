@@ -3,11 +3,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import MetadataField from '../../components/book/MetadataField.astro';
 import ChevronIcon from '../../components/icons/ChevronIcon.astro';
 import type { Book, BookListItem, Edition } from '../../types/book';
-import { API_URL, DEFAULT_LANGUAGE } from '../../lib/constants';
-import { formatPrice, getUniqueValues, extractSamplePaths } from '../../lib/utils';
+import { API_URL, SELECTED_CURRENCY } from '../../lib/constants';
+import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency } from '../../lib/utils';
 
 export async function getStaticPaths() {
-  const response = await fetch(`${API_URL}/api/books?lang=${DEFAULT_LANGUAGE}`);
+  // Fetch ALL books (no language filter - backend returns all editions)
+  const response = await fetch(`${API_URL}/api/books`);
   const books: BookListItem[] = await response.json();
 
   return await Promise.all(
@@ -27,12 +28,37 @@ interface Props {
 }
 
 const { bookData } = Astro.props;
-const defaultEdition: Edition = bookData.editions[0];
+
+// Filter editions that have pricing in the selected currency (currently GBP)
+// This ensures we only show editions that are actually available for purchase in the selected currency
+// TODO: When currency selector is added:
+//   1. Replace SELECTED_CURRENCY with a reactive currency state/prop
+//   2. This filter will automatically work with the new currency
+const editionsWithPricing = bookData.editions.filter(edition => 
+  getPriceForCurrency(edition.prices, SELECTED_CURRENCY) !== null
+);
+
+// Select the first edition that has pricing in the selected currency
+// If no editions have pricing in selected currency, fall back to first edition
+// (will display as unavailable with disabled "Add to cart" button)
+// TODO: When adding edition selector dropdown, allow user to choose from editionsWithPricing
+const defaultEdition: Edition = editionsWithPricing.length > 0 
+  ? editionsWithPricing[0] 
+  : bookData.editions[0];
+
 const samplePages = extractSamplePaths(defaultEdition.samples);
 
-// Extract unique formats and languages from all editions
-const availableFormats = getUniqueValues(bookData.editions.map(e => e.format).filter(Boolean));
-const availableLanguages = getUniqueValues(bookData.editions.map(e => e.language).filter(Boolean));
+// Get price for selected currency (currently GBP)
+// Returns null if not available, which triggers "Price not available" display
+const gbpPrice = getPriceForCurrency(defaultEdition.prices, SELECTED_CURRENCY);
+
+// Extract unique formats and languages from editions with pricing in selected currency
+// These could be used for edition selector dropdowns in the future
+// TODO: When currency selector is added:
+//   1. These lists will automatically update based on selected currency
+//   2. Can use these to populate format/language selector dropdowns
+const availableFormats = getUniqueValues(editionsWithPricing.map(e => e.format).filter(Boolean));
+const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.language).filter(Boolean));
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
@@ -154,7 +180,7 @@ const availableLanguages = getUniqueValues(bookData.editions.map(e => e.language
 
             <div class="flex items-center justify-end">
               <div class="text-2xl leading-8 font-bold text-primary">
-                {formatPrice(defaultEdition.price)}
+                {gbpPrice !== null ? formatPrice(gbpPrice) : 'Price not available'}
               </div>
             </div>
           </div>
@@ -164,14 +190,15 @@ const availableLanguages = getUniqueValues(bookData.editions.map(e => e.language
             id="add-to-cart-btn"
             data-book-id={defaultEdition.id}
             data-book-title={defaultEdition.title}
-            data-book-price={defaultEdition.price}
+            data-book-price={gbpPrice}
             data-book-cover={defaultEdition.cover}
             data-book-slug={bookData.book_slug}
             data-book-format={defaultEdition.format || 'eBook'}
             data-book-language={defaultEdition.language || 'English'}
             class="btn btn-primary btn-lg btn-block"
+            disabled={gbpPrice === null}
           >
-            Add to cart
+            {gbpPrice !== null ? 'Add to cart' : 'Not available in GBP'}
           </button>
         </div>
       </div>
