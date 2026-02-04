@@ -69,10 +69,18 @@ const availableLanguages = getUniqueValues(bookData.editions.map(e => e.language
 
             <div class="pb-4">
               <div class="space-y-2 text-sm">
+                <MetadataField 
+                  label="Cover" 
+                  value={[
+                    defaultEdition.cover_name,
+                    defaultEdition.cover_artist ? `by ${defaultEdition.cover_artist}` : null
+                  ].filter(Boolean).join(' ')} 
+                />
                 <MetadataField label="Pages" value={defaultEdition.page_count} />
                 <MetadataField label="Language" value={defaultEdition.language} />
-                <MetadataField label="Translator" value={defaultEdition.translator} />
-                <MetadataField label="Originally Published" value={bookData.year_published} />
+                <MetadataField label="Translator" value={defaultEdition.translator_name} />
+                <MetadataField label="Originally Published" value={bookData.original_publication_year} />
+                <MetadataField label="Original Language" value={bookData.original_language} />
                 <MetadataField label="This Edition" value={defaultEdition.publication_date} />
                 <MetadataField label="ISBN" value={defaultEdition.isbn} />
               </div>
@@ -80,7 +88,7 @@ const availableLanguages = getUniqueValues(bookData.editions.map(e => e.language
             </div>
           </details>
 
-          {bookData.author_bio ? (
+          {defaultEdition.author_bio ? (
             <details class="author-details mb-6">
               <summary class="flex items-center gap-2 cursor-pointer list-none">
                 <p class="opacity-70">by {defaultEdition.author_name}</p>
@@ -89,7 +97,7 @@ const availableLanguages = getUniqueValues(bookData.editions.map(e => e.language
 
 
               <div class="mt-4 pb-0">
-                <p class="text-sm leading-relaxed opacity-80">{bookData.author_bio}</p>
+                <p class="text-sm leading-relaxed opacity-80">{defaultEdition.author_bio}</p>
                 <div class="divider my-0"></div>
               </div>
             </details>

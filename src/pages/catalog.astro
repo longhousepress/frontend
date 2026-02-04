@@ -22,7 +22,7 @@ const books = (booksRaw || []).map((book: any) => {
     format: edition?.format ?? 'eBook',
     language: edition?.language ?? book.language ?? null,
     page_count: edition?.page_count ?? book.page_count ?? null,
-    translator: edition?.translator ?? null,
+    translator: edition?.translator_name ?? null,
     publication_date: edition?.publication_date ?? null,
     isbn: edition?.isbn ?? null,
   };
@@ -38,7 +38,7 @@ const allCategories = Array.from(
   new Set(
     books.flatMap((book: any) => book.categories || [])
   )
-).sort();
+).sort() as string[];
 ---
 
 <BaseLayout title="Catalog">
