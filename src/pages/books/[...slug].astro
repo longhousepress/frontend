@@ -1,15 +1,19 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import MetadataField from '../../components/book/MetadataField.astro';
+import ChevronIcon from '../../components/icons/ChevronIcon.astro';
+import type { Book, BookListItem, Edition } from '../../types/book';
+import { API_URL, DEFAULT_LANGUAGE } from '../../lib/constants';
+import { formatPrice, getUniqueValues, extractSamplePaths } from '../../lib/utils';
 
 export async function getStaticPaths() {
-  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
-  const response = await fetch(`${API_URL}/api/books?lang=eng`);
-  const books = await response.json();
+  const response = await fetch(`${API_URL}/api/books?lang=${DEFAULT_LANGUAGE}`);
+  const books: BookListItem[] = await response.json();
 
   return await Promise.all(
-    books.map(async (book: any) => {
+    books.map(async (book) => {
       const detailResponse = await fetch(`${API_URL}/api/books/${book.book_slug}`);
-      const bookData = await detailResponse.json();
+      const bookData: Book = await detailResponse.json();
       return {
         params: { slug: book.book_slug },
         props: { bookData },
@@ -18,16 +22,17 @@ export async function getStaticPaths() {
   );
 }
 
+interface Props {
+  bookData: Book;
+}
+
 const { bookData } = Astro.props;
-const defaultEdition = bookData.editions[0];
-const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
-const samplePages = defaultEdition.samples
-  ? defaultEdition.samples.map((sample: any) => sample.path)
-  : [];
+const defaultEdition: Edition = bookData.editions[0];
+const samplePages = extractSamplePaths(defaultEdition.samples);
 
 // Extract unique formats and languages from all editions
-const availableFormats = [...new Set(bookData.editions.map((e: any) => e.format).filter(Boolean))] as string[];
-const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.language).filter(Boolean))] as string[];
+const availableFormats = getUniqueValues(bookData.editions.map(e => e.format).filter(Boolean));
+const availableLanguages = getUniqueValues(bookData.editions.map(e => e.language).filter(Boolean));
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
@@ -58,50 +63,18 @@ const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.langu
           <details class="metadata-details mb-4">
             <summary class="flex items-center gap-2 cursor-pointer list-none mb-4">
               <h1 class="font-bold">{defaultEdition.title}</h1>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="opacity-50 hover:opacity-100 transition-all duration-200 metadata-arrow">
-                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-              </svg>
+              <ChevronIcon class="opacity-50 hover:opacity-100 transition-all duration-200 metadata-arrow" />
             </summary>
 
 
             <div class="pb-4">
               <div class="space-y-2 text-sm">
-                {defaultEdition.page_count && (
-                  <div class="flex justify-between">
-                    <span class="opacity-70">Pages:</span>
-                    <span class="font-medium">{defaultEdition.page_count}</span>
-                  </div>
-                )}
-                {defaultEdition.language && (
-                  <div class="flex justify-between">
-                    <span class="opacity-70">Language:</span>
-                    <span class="font-medium">{defaultEdition.language}</span>
-                  </div>
-                )}
-                {defaultEdition.translator && (
-                  <div class="flex justify-between">
-                    <span class="opacity-70">Translator:</span>
-                    <span class="font-medium">{defaultEdition.translator}</span>
-                  </div>
-                )}
-                {bookData.year_published && (
-                  <div class="flex justify-between">
-                    <span class="opacity-70">Originally Published:</span>
-                    <span class="font-medium">{bookData.year_published}</span>
-                  </div>
-                )}
-                {defaultEdition.publication_date && (
-                  <div class="flex justify-between">
-                    <span class="opacity-70">This Edition:</span>
-                    <span class="font-medium">{defaultEdition.publication_date}</span>
-                  </div>
-                )}
-                {defaultEdition.isbn && (
-                  <div class="flex justify-between">
-                    <span class="opacity-70">ISBN:</span>
-                    <span class="font-medium">{defaultEdition.isbn}</span>
-                  </div>
-                )}
+                <MetadataField label="Pages" value={defaultEdition.page_count} />
+                <MetadataField label="Language" value={defaultEdition.language} />
+                <MetadataField label="Translator" value={defaultEdition.translator} />
+                <MetadataField label="Originally Published" value={bookData.year_published} />
+                <MetadataField label="This Edition" value={defaultEdition.publication_date} />
+                <MetadataField label="ISBN" value={defaultEdition.isbn} />
               </div>
               <div class="divider my-4"></div>
             </div>
@@ -111,9 +84,7 @@ const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.langu
             <details class="author-details mb-6">
               <summary class="flex items-center gap-2 cursor-pointer list-none">
                 <p class="opacity-70">by {defaultEdition.author_name}</p>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="opacity-50 hover:opacity-100 transition-all duration-200 author-arrow">
-                  <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-                </svg>
+                <ChevronIcon class="opacity-50 hover:opacity-100 transition-all duration-200 author-arrow" />
               </summary>
 
 
@@ -140,9 +111,7 @@ const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.langu
           <div class="description-fade pointer-events-none"></div>
 
           <button class="description-scroll-btn" id="scroll-indicator" aria-label="Scroll down">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
-            </svg>
+            <ChevronIcon />
           </button>
         </div>
 
@@ -209,7 +178,7 @@ const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.langu
         <div>
           <h2 class="text-2xl font-bold mb-3">Categories</h2>
           <div class="flex flex-wrap gap-2">
-            {bookData.categories.map((category: string) => (
+            {bookData.categories.map((category) => (
               <span class="badge badge-lg">{category}</span>
             ))}
           </div>
@@ -357,6 +326,7 @@ const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.langu
 
   <script>
     import { Cart } from '../../lib/cart';
+    import { CART_SUCCESS_MESSAGE_DURATION } from '../../lib/constants';
 
     function setupBookDetailPage() {
       const container = document.getElementById('description-container');
@@ -403,7 +373,7 @@ const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.langu
         setTimeout(() => {
           btn.disabled = false;
           btn.textContent = originalText;
-        }, 1000);
+        }, CART_SUCCESS_MESSAGE_DURATION);
       });
 
 
