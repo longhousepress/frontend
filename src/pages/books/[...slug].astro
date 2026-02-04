@@ -21,9 +21,13 @@ export async function getStaticPaths() {
 const { bookData } = Astro.props;
 const defaultEdition = bookData.editions[0];
 const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
-const samplePages = defaultEdition.samples 
+const samplePages = defaultEdition.samples
   ? defaultEdition.samples.map((sample: any) => sample.path)
   : [];
+
+// Extract unique formats and languages from all editions
+const availableFormats = [...new Set(bookData.editions.map((e: any) => e.format).filter(Boolean))] as string[];
+const availableLanguages = [...new Set(bookData.editions.map((e: any) => e.language).filter(Boolean))] as string[];
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
@@ -37,8 +41,8 @@ const samplePages = defaultEdition.samples
           style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
         />
         {samplePages.length > 0 && (
-          <button 
-            id="read-sample-btn" 
+          <button
+            id="read-sample-btn"
             class="btn btn-outline btn-sm w-full max-w-[320px]"
             data-sample-pages={JSON.stringify(samplePages)}
           >
@@ -147,15 +151,26 @@ const samplePages = defaultEdition.samples
 
           <div class="grid grid-cols-2 gap-4 mb-6">
 
-            <div class="flex gap-2 items-center">
-              <button class="btn btn-outline btn-sm">eBook</button>
-              <div class="custom-tooltip">
-                <button class="btn btn-dash btn-sm" disabled>Paperback</button>
-                <span class="tooltip-text">Not currently available</span>
+            <div class="flex gap-2 items-end">
+              <div class="flex flex-col gap-1">
+                <label class="text-xs opacity-70">Format</label>
+                <select class="select select-sm w-24" disabled={availableFormats.length <= 1}>
+                  {availableFormats.map((format: string) => (
+                    <option value={format} selected={format === defaultEdition.format}>
+                      {format}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div class="custom-tooltip">
-                <button class="btn btn-dash btn-sm" disabled>Hardcover</button>
-                <span class="tooltip-text">Not currently available</span>
+              <div class="flex flex-col gap-1">
+                <label class="text-xs opacity-70">Language</label>
+                <select class="select select-sm w-24" disabled={availableLanguages.length <= 1}>
+                  {availableLanguages.map((language: string) => (
+                    <option value={language} selected={language === defaultEdition.language}>
+                      {language}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -177,7 +192,7 @@ const samplePages = defaultEdition.samples
             data-book-slug={bookData.book_slug}
             data-book-format={defaultEdition.format || 'eBook'}
             data-book-language={defaultEdition.language || 'English'}
-            class="btn btn-primary btn-sm btn-block"
+            class="btn btn-primary btn-lg btn-block"
           >
             Add to cart
           </button>
@@ -207,7 +222,7 @@ const samplePages = defaultEdition.samples
   <div id="sample-modal" class="sample-modal hidden">
 
     <div class="sample-modal-backdrop"></div>
-    
+
 
     <div class="sample-modal-content">
 
@@ -217,23 +232,23 @@ const samplePages = defaultEdition.samples
         </span>
         <button id="close-modal-btn" class="btn btn-sm btn-ghost">✕</button>
       </div>
-      
+
 
       <div class="flex justify-center bg-white p-4">
         <img id="page-image" src="" alt="Book sample page" class="max-h-[75vh] w-auto" />
       </div>
-      
+
 
       <div class="sample-control-panel bg-base-100 flex items-center justify-between gap-4 px-4 py-1 rounded-b-lg">
         <button id="prev-page-btn" class="btn btn-xs" disabled>
           ←
         </button>
-        <input 
-          id="page-slider" 
-          type="range" 
-          min="0" 
-          max="3" 
-          value="0" 
+        <input
+          id="page-slider"
+          type="range"
+          min="0"
+          max="3"
+          value="0"
           class="range range-xs flex-1 opacity-30"
         />
         <button id="next-page-btn" class="btn btn-xs">
@@ -408,19 +423,19 @@ const samplePages = defaultEdition.samples
 
       function updateSampleDisplay() {
         if (!pageImage) return;
-        
+
         // Display current page image
         pageImage.src = samplePages[currentPageIndex] || '';
         pageImage.alt = `Book sample page ${currentPageIndex + 1}`;
-        
+
         // Update button states
         const totalPages = samplePages.length;
         prevBtn.disabled = currentPageIndex === 0;
         nextBtn.disabled = currentPageIndex >= totalPages - 1;
-        
+
         // Update slider
         pageSlider.value = currentPageIndex.toString();
-        
+
         // Update page indicator
         const pageIndicator = document.getElementById('page-indicator');
         if (pageIndicator) {
@@ -468,7 +483,7 @@ const samplePages = defaultEdition.samples
 
       document.addEventListener('keydown', (e) => {
         if (sampleModal?.classList.contains('hidden')) return;
-        
+
         if (e.key === 'ArrowLeft' && !prevBtn.disabled) {
           e.preventDefault();
           prevBtn.click();
