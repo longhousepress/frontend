@@ -23,13 +23,13 @@ const books = (booksRaw || [])
       .map((edition: any) => {
         // Get price for selected currency from the prices array
         const price = edition.prices ? getPriceForCurrency(edition.prices, SELECTED_CURRENCY) : null;
-        
+
         // Skip this edition if no price available for selected currency
         // This means books without GBP pricing won't appear in the catalog at all
         if (price === null) {
           return null;
         }
-        
+
         return {
           id: edition.id,
           title: edition.title,

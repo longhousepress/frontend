@@ -3,7 +3,62 @@ import Layout from '../layouts/BaseLayout.astro';
 ---
 
 <Layout title="Home">
-  <main>
-    <!-- This will be the hero section -->
-  </main>
+  <div class="flex items-center justify-center min-h-[calc(100vh-12rem)]">
+    <div class="w-full">
+      <div class="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2 lg:items-center">
+        <div class="lg:pr-8">
+          <div class="lg:max-w-lg">
+            <h2 class="text-base/7 font-semibold text-primary">eBooks done right</h2>
+            <p class="mt-2 text-4xl font-semibold tracking-tight text-pretty sm:text-5xl">Donne Books</p>
+            <p class="mt-6 text-lg/8 opacity-70">Small, independent publisher focused on thoughtfully crafted digital books.</p>
+            <dl class="mt-10 space-y-8 text-base/7 opacity-60">
+              <div class="relative pl-9">
+                <dt class="inline font-semibold opacity-100">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="absolute top-1 left-1 size-5 text-primary">
+                    <path d="M5.5 17a4.5 4.5 0 0 1-1.44-8.765 4.5 4.5 0 0 1 8.302-3.046 3.5 3.5 0 0 1 4.504 4.272A4 4 0 0 1 15 17H5.5Zm3.75-2.75a.75.75 0 0 0 1.5 0V9.66l1.95 2.1a.75.75 0 1 0 1.1-1.02l-3.25-3.5a.75.75 0 0 0-1.1 0l-3.25 3.5a.75.75 0 1 0 1.1 1.02l1.95-2.1v4.59Z" clip-rule="evenodd" fill-rule="evenodd" />
+                  </svg>
+                  Carefully curated.
+                </dt>
+                <dd class="inline">Our catalog blends battle-worn classics alongside exceptional contemporary writing. We publish what we would like to read.</dd>
+              </div>
+              <div class="relative pl-9">
+                <dt class="inline font-semibold opacity-100">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="absolute top-1 left-1 size-5 text-primary">
+                    <path d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" fill-rule="evenodd" />
+                  </svg>
+                  Yours to own.
+                </dt>
+                <dd class="inline">Our eBooks come with zero DRM: every edition you buy is yours to own, read, modify, delete, and share with friends. We treat our customers with respect, not suspicion.</dd>
+              </div>
+              <div class="relative pl-9">
+                <dt class="inline font-semibold opacity-100">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" class="absolute top-1 left-1 size-5 text-primary">
+                    <path d="M4.632 3.533A2 2 0 0 1 6.577 2h6.846a2 2 0 0 1 1.945 1.533l1.976 8.234A3.489 3.489 0 0 0 16 11.5H4c-.476 0-.93.095-1.344.267l1.976-8.234Z" />
+                    <path d="M4 13a2 2 0 1 0 0 4h12a2 2 0 1 0 0-4H4Zm11.24 2a.75.75 0 0 1 .75-.75H16a.75.75 0 0 1 .75.75v.01a.75.75 0 0 1-.75.75h-.01a.75.75 0 0 1-.75-.75V15Zm-2.25-.75a.75.75 0 0 0-.75.75v.01c0 .414.336.75.75.75H13a.75.75 0 0 0 .75-.75V15a.75.75 0 0 0-.75-.75h-.01Z" clip-rule="evenodd" fill-rule="evenodd" />
+                  </svg>
+                  Digital first.
+                </dt>
+                <dd class="inline">Instead of treating eBooks as an afterthought to print editions, we use modern eBook standards to deliver a thoughtfully designed reading experience that makes full use of your device’s capabilities.</dd>
+              </div>
+            </dl>
+            <div class="mt-10">
+              <a href="/catalog" class="btn btn-primary">Browse our books</a>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-center lg:justify-end">
+          <figure>
+            <img
+              src="/hero.png"
+              alt="Product screenshot"
+              class="w-full max-w-none rounded-xl lg:max-w-2xl"
+            />
+            <figcaption class="mt-2 text-sm opacity-70 text-center">
+              Actual rendering of <a href="/books/moliere-don-juan" class="text-primary underline">Don Juan by Molière</a> across devices
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </div>
 </Layout>
