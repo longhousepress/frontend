@@ -18,7 +18,7 @@ const { title = 'Catalog' } = Astro.props;
       document.documentElement.setAttribute('data-theme', initialTheme);
     </script>
   </head>
-  <body class="min-h-screen bg-base-100 text-base">
+  <body class="min-h-screen bg-base-100 text-base flex flex-col">
     <!-- Sticky navbar -->
     <div class="sticky top-0 z-50">
       <div class="navbar bg-base-100 shadow-sm min-h-0 h-12">
@@ -73,12 +73,12 @@ const { title = 'Catalog' } = Astro.props;
     </div>
 
     <!-- Main content; add top margin so content doesn't sit under the sticky navbar -->
-    <main class="max-w-7xl mx-auto w-full p-4 mt-6">
+    <main class="max-w-7xl mx-auto w-full p-4 mt-6 flex-grow">
       <slot />
     </main>
 
     <!-- Footer -->
-    <footer class="footer footer-center p-4 bg-base-200 text-base-content mt-8">
+    <footer class="footer footer-center p-4 bg-base-200 text-base-content">
       <div class="flex items-center gap-4">
         <a href="/privacy" class="link link-hover">Privacy policy</a>
         <a href="/contact" class="link link-hover">Contact</a>
