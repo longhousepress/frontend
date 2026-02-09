@@ -40,8 +40,18 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
               <p class="text-sm opacity-70 item-language"></p>
             </div>
 
-            <div class="flex flex-col gap-2 item-downloads" style="min-width: 140px;">
-              <!-- Download buttons will be inserted here -->
+            <div class="flex flex-col gap-2 item-downloads" style="align-items: flex-start;">
+              <!-- Primary download button (epub) -->
+              <div class="item-primary-download"></div>
+              <!-- Show more link (hidden if only one format) -->
+              <button class="item-show-more text-sm text-primary hover:text-primary-focus hidden flex items-center gap-1">
+                <span>Show more formats</span>
+                <svg class="item-arrow w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <!-- Additional formats (hidden by default) -->
+              <div class="item-additional-downloads hidden flex flex-col gap-2"></div>
             </div>
           </li>
         </template>
@@ -142,19 +152,83 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
       (li.querySelector('.item-format') as HTMLElement).textContent = edition.format || 'eBook';
       (li.querySelector('.item-language') as HTMLElement).textContent = edition.language || 'English';
 
-      // Download links - create a button for each file format
-      const downloadsContainer = li.querySelector('.item-downloads') as HTMLElement;
+      // Download links - separate epub from other formats
+      const primaryContainer = li.querySelector('.item-primary-download') as HTMLElement;
+      const additionalContainer = li.querySelector('.item-additional-downloads') as HTMLElement;
+      const showMoreBtn = li.querySelector('.item-show-more') as HTMLButtonElement;
       const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
 
-      edition.files.forEach((file) => {
+      // Find epub file and other files
+      const epubFile = edition.files.find(f => f.format.toLowerCase() === 'epub');
+      const otherFiles = edition.files.filter(f => f.format.toLowerCase() !== 'epub');
+
+      // Create epub button (primary)
+      if (epubFile) {
         const downloadBtn = document.createElement('a');
         downloadBtn.className = 'btn btn-primary btn-sm';
+        downloadBtn.style.width = '140px';
+        downloadBtn.textContent = `Download .${epubFile.format.toLowerCase()}`;
+        const href = epubFile.path.startsWith('/') ? apiUrl + epubFile.path : epubFile.path;
+        downloadBtn.href = href;
+        downloadBtn.download = '';
+        primaryContainer.appendChild(downloadBtn);
+      }
+
+      // Create buttons for other formats
+      otherFiles.forEach((file) => {
+        const downloadBtn = document.createElement('a');
+        downloadBtn.className = 'btn btn-primary btn-sm';
+        downloadBtn.style.width = '140px';
         downloadBtn.textContent = `Download .${file.format.toLowerCase()}`;
         const href = file.path.startsWith('/') ? apiUrl + file.path : file.path;
         downloadBtn.href = href;
         downloadBtn.download = '';
-        downloadsContainer.appendChild(downloadBtn);
+        additionalContainer.appendChild(downloadBtn);
       });
+
+      // Show "Show more formats" button if there are additional formats
+      if (otherFiles.length > 0) {
+        showMoreBtn.classList.remove('hidden');
+        const arrow = li.querySelector('.item-arrow') as SVGElement;
+        const buttonText = showMoreBtn.querySelector('span') as HTMLSpanElement;
+        const downloadsContainer = li.querySelector('.item-downloads') as HTMLElement;
+        
+        showMoreBtn.addEventListener('click', () => {
+          additionalContainer.classList.toggle('hidden');
+          const isHidden = additionalContainer.classList.contains('hidden');
+          buttonText.textContent = isHidden ? 'Show more formats' : 'Show fewer formats';
+          
+          // Rotate arrow
+          if (isHidden) {
+            arrow.classList.remove('rotate-180');
+          } else {
+            arrow.classList.add('rotate-180');
+          }
+          
+          // Move button to bottom when expanded, back to original position when collapsed
+          if (isHidden) {
+            // Move button before additional downloads
+            downloadsContainer.insertBefore(showMoreBtn, additionalContainer);
+          } else {
+            // Move button after additional downloads (to the end)
+            downloadsContainer.appendChild(showMoreBtn);
+          }
+        });
+      }
+
+      // If there's no epub, show all files in primary container
+      if (!epubFile && edition.files.length > 0) {
+        edition.files.forEach((file) => {
+          const downloadBtn = document.createElement('a');
+          downloadBtn.className = 'btn btn-primary btn-sm';
+          downloadBtn.style.width = '140px';
+          downloadBtn.textContent = `Download .${file.format.toLowerCase()}`;
+          const href = file.path.startsWith('/') ? apiUrl + file.path : file.path;
+          downloadBtn.href = href;
+          downloadBtn.download = '';
+          primaryContainer.appendChild(downloadBtn);
+        });
+      }
 
       return li;
     }
