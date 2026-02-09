@@ -348,22 +348,25 @@ const allCategories = Array.from(
     const searchInput = document.getElementById('search-input') as HTMLInputElement;
     const searchKbd = document.getElementById('search-kbd');
 
-    searchInput?.addEventListener('focus', () => {
+    // Early return if essential elements don't exist (not on catalog page)
+    if (!searchInput) return;
+
+    searchInput.addEventListener('focus', () => {
       if (searchKbd) searchKbd.textContent = 'Esc';
     });
 
-    searchInput?.addEventListener('blur', () => {
+    searchInput.addEventListener('blur', () => {
       if (searchKbd) searchKbd.textContent = '/';
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === '/' && document.activeElement && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
         e.preventDefault();
-        searchInput?.focus();
+        searchInput.focus();
       }
 
       if (e.key === 'Escape' && document.activeElement === searchInput) {
-        searchInput?.blur();
+        searchInput.blur();
       }
     });
   }
@@ -373,7 +376,10 @@ const allCategories = Array.from(
     const filterPanel = document.getElementById('filter-panel') as HTMLElement;
     let isFilterOpen = false;
 
-    filterToggle?.addEventListener('click', () => {
+    // Early return if essential elements don't exist (not on catalog page)
+    if (!filterToggle || !filterPanel) return;
+
+    filterToggle.addEventListener('click', () => {
       isFilterOpen = !isFilterOpen;
 
       if (isFilterOpen) {
@@ -387,7 +393,7 @@ const allCategories = Array.from(
     document.addEventListener('click', (e) => {
       if (isFilterOpen &&
           !filterPanel.contains(e.target as Node) &&
-          !filterToggle?.contains(e.target as Node)) {
+          !filterToggle.contains(e.target as Node)) {
         isFilterOpen = false;
         filterPanel.classList.remove('open');
       }
@@ -406,6 +412,9 @@ const allCategories = Array.from(
     const maxPriceSlider = document.getElementById('max-price-slider') as HTMLInputElement;
     const sliderRange = document.getElementById('dual-slider-range') as HTMLElement;
 
+    // Early return if essential elements don't exist (not on catalog page)
+    if (!searchInput || !booksGrid || !minPriceSlider || !maxPriceSlider) return;
+
     const MIN_PRICE = 1;
     const MAX_PRICE = 30;
     const DEFAULT_MIN = 4;
@@ -413,6 +422,8 @@ const allCategories = Array.from(
 
     // Update the visual range fill
     function updateSliderRange() {
+      if (!minPriceSlider || !maxPriceSlider) return;
+      
       const min = parseInt(minPriceSlider.value);
       const max = parseInt(maxPriceSlider.value);
       const minPercent = ((min - 1) / 29) * 100;
