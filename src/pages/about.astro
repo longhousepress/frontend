@@ -1,23 +1,43 @@
 ---
-import Layout from '../layouts/BaseLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<Layout title="About">
-  <main>
-      <div class="collapse bg-base-100 border border-base-300">
+<BaseLayout title="About">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">Frequently Asked Questions</h1>
+    
+    <div class="space-y-4">
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
         <input type="radio" name="my-accordion-1" checked="checked" />
         <div class="collapse-title font-semibold">What files do I get?</div>
-        <div class="collapse-content text-sm">Ever eBook comes with multiple file formats: .epub, .kepub, .azw3, .mobi, and .pdf. This ensures that you are able to read it on any device.</div>
+        <div class="collapse-content text-sm">
+          <p>Every eBook comes with multiple file formats: .epub, .kepub, .azw3, .mobi, and .pdf. This ensures that you are able to read it on any device.</p>
+        </div>
       </div>
-      <div class="collapse bg-base-100 border border-base-300">
+      
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
         <input type="radio" name="my-accordion-1" />
         <div class="collapse-title font-semibold">How will I receive my purchase?</div>
-        <div class="collapse-content text-sm">All files will be sent to the email you specified when making an order.</div>
+        <div class="collapse-content text-sm">
+          <p>All files will be sent to the email you specified when making an order. You'll receive download links immediately after payment is confirmed.</p>
+        </div>
       </div>
-      <div class="collapse bg-base-100 border border-base-300">
+      
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
         <input type="radio" name="my-accordion-1" />
-        <div class="collapse-title font-semibold">How do I contact Dragon Publishing?</div>
-        <div class="collapse-content text-sm">Email info@dragonpublishing.com. We are very responsive.</div>
+        <div class="collapse-title font-semibold">Are your eBooks DRM-free?</div>
+        <div class="collapse-content text-sm">
+          <p>Yes! All our eBooks come with zero DRM. Every edition you buy is yours to own, read, modify, and share. We treat our customers with respect, not suspicion.</p>
+        </div>
       </div>
-  </main>
-</Layout>
+      
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title font-semibold">How do I contact Longhouse Press?</div>
+        <div class="collapse-content text-sm">
+          <p>Email <a href="mailto:info@dragonpublishing.com" class="text-primary hover:text-primary-focus">info@dragonpublishing.com</a>. We are very responsive and happy to help with any questions or issues.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

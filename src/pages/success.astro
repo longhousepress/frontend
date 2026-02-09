@@ -299,7 +299,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
       }
     }
 
-    // Start verification on page load
-    verifyAndLoadOrder();
+    // Start verification on page load and after view transitions
+    document.addEventListener('astro:page-load', verifyAndLoadOrder);
   </script>
 </BaseLayout>

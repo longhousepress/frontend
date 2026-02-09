@@ -1,9 +1,38 @@
 ---
-import Layout from '../layouts/BaseLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<Layout title="Home">
-  <main>
-  	<p>Where the money at?</p>
-  </main>
-</Layout>
+<BaseLayout title="Payment Failed">
+  <div class="max-w-2xl mx-auto py-12 text-center">
+    <div class="mb-8">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 mx-auto text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    
+    <h1 class="text-3xl font-bold mb-4">Payment Failed</h1>
+    
+    <p class="text-lg opacity-70 mb-8">
+      Your payment could not be processed. This could be due to insufficient funds, an incorrect card number, or your payment was declined by your bank.
+    </p>
+    
+    <div class="space-y-4">
+      <p class="text-sm opacity-60">
+        Your cart items have been preserved. You can try again or contact us if you continue to experience issues.
+      </p>
+      
+      <div class="flex gap-4 justify-center flex-wrap">
+        <a href="/checkout" class="btn btn-primary">
+          Try Again
+        </a>
+        <a href="/catalog" class="btn btn-outline">
+          Continue Shopping
+        </a>
+      </div>
+      
+      <p class="text-sm opacity-60 mt-8">
+        Need help? Contact us at <a href="mailto:info@dragonpublishing.com" class="text-primary hover:text-primary-focus">info@dragonpublishing.com</a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>
