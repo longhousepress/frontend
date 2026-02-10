@@ -72,14 +72,21 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
       </div>
 
       <!-- Footer -->
-      <div id="cart-footer" class="hidden border-t border-base-300 px-4 py-6 sm:px-6">
+      <form id="checkout-form" class="hidden border-t border-base-300 px-4 py-6 sm:px-6">
         <div class="flex justify-between text-base font-medium mb-2">
           <p>Subtotal</p>
           <p id="subtotal">£0.00</p>
         </div>
         <p class="text-sm opacity-70">Shipping and taxes calculated at checkout.</p>
 
-        <button id="checkout-btn" class="btn btn-primary btn-block mt-6">
+        <div class="border-t border-base-300 mt-6 pt-6">
+          <p class="text-base font-medium mb-2">Email address</p>
+          <p class="text-sm opacity-70 mb-4">We will deliver your eBooks to this email address, please verify that you have access to it.</p>
+          <input class="input validator w-full" type="email" required placeholder="mail@site.com" id="email-input" />
+          <div class="validator-hint">Enter valid email address</div>
+        </div>
+
+        <button type="submit" id="checkout-btn" class="btn btn-primary btn-block mt-6">
           Checkout
         </button>
 
@@ -89,7 +96,7 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
             Continue Shopping →
           </a>
         </p>
-      </div>
+      </form>
     </div>
   </div>
 
@@ -103,9 +110,10 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
         loading: document.getElementById('cart-loading')!,
         items: document.getElementById('cart-items')!,
         empty: document.getElementById('empty-cart')!,
-        footer: document.getElementById('cart-footer')!,
+        form: document.getElementById('checkout-form') as HTMLFormElement,
         subtotal: document.getElementById('subtotal')!,
         checkout: document.getElementById('checkout-btn') as HTMLButtonElement,
+        emailInput: document.getElementById('email-input') as HTMLInputElement,
         template: document.getElementById('cart-item-template') as HTMLTemplateElement,
       };
 
@@ -151,13 +159,13 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
         if (items.length === 0) {
           elements.empty.classList.remove('hidden');
           elements.items.classList.add('hidden');
-          elements.footer.classList.add('hidden');
+          elements.form.classList.add('hidden');
           return;
         }
 
         elements.empty.classList.add('hidden');
         elements.items.classList.remove('hidden');
-        elements.footer.classList.remove('hidden');
+        elements.form.classList.remove('hidden');
 
         elements.items.innerHTML = '';
         items.forEach(item => {
@@ -204,13 +212,21 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
         }
       }, true);
 
-      elements.checkout.addEventListener('click', async () => {
+      elements.form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
         const items = Cart.getItems().map(item => ({
           edition_id: Number(item.id),
           quantity: item.quantity
         }));
 
+        const email = elements.emailInput.value.trim();
+
         if (items.length === 0) return;
+        if (!email) {
+          alert('Please enter your email address.');
+          return;
+        }
 
         try {
           elements.checkout.disabled = true;
@@ -219,7 +235,7 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
           const res = await fetch(`${apiUrl}/api/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items })
+            body: JSON.stringify({ items, email })
           });
 
           const data = await res.json();
