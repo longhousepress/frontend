@@ -1,13 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { SELECTED_CURRENCY } from '../lib/constants';
 
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
 
 const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
+// TODO: When multiple currencies are supported, replace this static usage with a dynamic currency selector/state.
+// For now we keep using the hardcoded SELECTED_CURRENCY from constants (lowercased).
+const CURRENCY = SELECTED_CURRENCY.toLowerCase();
 ---
 
 <BaseLayout title="Shopping Cart">
-  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL}>
+  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL} data-currency={CURRENCY}>
     <div class="flex h-full flex-col bg-base-100">
       <!-- Header -->
       <div class="flex-1 px-4 py-6 sm:px-6">
@@ -230,12 +234,14 @@ const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 
         try {
           elements.checkout.disabled = true;
-          const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
+          const rootEl = document.querySelector<HTMLElement>('[data-api-url]')!;
+          const apiUrl = rootEl?.dataset.apiUrl || '';
+          const currency = (rootEl?.dataset.currency || 'gbp').toLowerCase();
 
           const res = await fetch(`${apiUrl}/api/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items, email })
+            body: JSON.stringify({ items, email, currency })
           });
 
           const data = await res.json();
