@@ -1,4 +1,6 @@
 ---
+import { Image } from 'astro:assets';
+
 /*
   BookCard.astro
 
@@ -6,7 +8,7 @@
     - title: string
     - author: string
     - price: string (optional)
-    - img: string (optional) - path or URL to the cover image
+    - img: ImageMetadata | string - optimized image from src/assets or URL
     - href: string (optional) - if provided, the whole card becomes a link
     - sizeClasses: string (optional) - Tailwind width classes to control sizing
 
@@ -15,7 +17,7 @@
       title="1984"
       author="George Orwell"
       price="£4.99"
-      img="/cover080-cropped.jpg"
+      img={cover080}
       href="/books/1984"
       sizeClasses="w-36 sm:w-44 md:w-52 lg:w-60"
     />
@@ -24,10 +26,26 @@ const {
   title = "Book Title",
   author = "Author Name",
   price = "",
-  img = "/cover080-cropped.jpg",
+  img,
   href = null,
   sizeClasses = "w-full",
 } = Astro.props;
+
+// Determine if img is an imported asset or a string path
+const isImportedAsset = img && typeof img === 'object' && 'src' in img;
+
+// Detect original image format to preserve it
+const getImageFormat = (img: any) => {
+  if (!isImportedAsset) return undefined;
+  const src = img.src || '';
+  if (src.endsWith('.png')) return 'png';
+  if (src.endsWith('.jpeg') || src.endsWith('.jpg')) return 'jpg';
+  if (src.endsWith('.webp')) return 'webp';
+  if (src.endsWith('.avif')) return 'avif';
+  return 'jpg'; // default fallback
+};
+
+const imageFormat = getImageFormat(img);
 ---
 <article
   class={`group card bg-base-100 ${sizeClasses} shadow-sm hover:shadow-md transition-shadow duration-150 relative rounded-lg border-2 border-base-300`}
@@ -40,12 +58,24 @@ const {
     aria-label={href ? `View details for ${title} by ${author}` : undefined}
   >
     <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
-      <img
-        src={img}
-        alt={`Cover of ${title} by ${author}`}
-        class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
-        loading="lazy"
-      />
+      {isImportedAsset ? (
+        <Image
+          src={img}
+          alt={`Cover of ${title} by ${author}`}
+          widths={[200, 300, 400, 600]}
+          sizes="(max-width: 640px) 144px, (max-width: 768px) 176px, (max-width: 1024px) 208px, 240px"
+          format={imageFormat}
+          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
+          loading="lazy"
+        />
+      ) : (
+        <img
+          src={img}
+          alt={`Cover of ${title} by ${author}`}
+          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
+          loading="lazy"
+        />
+      )}
     </figure>
 
     <div class="card-body pb-12" style="height: 140px;">

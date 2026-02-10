@@ -4,6 +4,44 @@ import BookCard from '../components/BookCard.astro';
 import { SELECTED_CURRENCY } from '../lib/constants';
 import { getPriceForCurrency } from '../lib/utils';
 
+// Import all cover images from assets/covers using Vite's import.meta.glob
+// This allows Astro to optimize images at build time
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/covers/*');
+
+// Helper function to get the optimized image for a cover path
+async function getCoverImage(coverPath: string, bookSlug: string) {
+  if (!coverPath) return coverPath;
+  
+  // Try multiple strategies to find the cover image
+  const strategies = [
+    // Strategy 1: Extract filename from the cover path (e.g., "/covers/cover023.jpg" -> "cover023.jpg")
+    coverPath.split('/').pop(),
+    // Strategy 2: Use book slug as filename (e.g., "h-rider-haggard_when-the-world-shook.jpg")
+    `${bookSlug}.jpg`,
+    `${bookSlug}.jpeg`,
+    `${bookSlug}.png`,
+    `${bookSlug}.webp`,
+    // Strategy 3: Try "cover.jpg" in case it's a generic name
+    'cover.jpg',
+  ];
+  
+  for (const filename of strategies) {
+    if (!filename) continue;
+    
+    // Look up the imported image
+    const imagePath = `../assets/covers/${filename}`;
+    const imageModule = coverImages[imagePath];
+    
+    if (imageModule) {
+      const image = await imageModule();
+      return image.default;
+    }
+  }
+  
+  // Fallback to original path if not found in assets
+  return coverPath;
+}
+
 // Fetch ALL books from API at build time (no language filtering - backend returns all editions)
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
 const response = await fetch(`${API_URL}/api/books`);
@@ -16,7 +54,7 @@ const booksRaw = await response.json();
 //   1. Replace SELECTED_CURRENCY with a reactive currency state/prop
 //   2. The filtering logic below will automatically work with the new currency
 //   3. May want to add additional filtering for language/format preferences
-const books = (booksRaw || [])
+const booksWithPaths = (booksRaw || [])
   .flatMap((book: any) => {
     // Get all editions that have a price in the selected currency
     return (book.editions || [])
@@ -35,7 +73,7 @@ const books = (booksRaw || [])
           title: edition.title,
           author: edition.author_name,
           price: price,
-          cover: edition.cover,
+          coverPath: edition.cover, // Store original path for image lookup
           description: edition.description,
           book_slug: book.book_slug,
           categories: edition.categories || book.categories || [],
@@ -49,6 +87,14 @@ const books = (booksRaw || [])
       })
       .filter((edition: any) => edition !== null);
   });
+
+// Load optimized cover images for all books
+const books = await Promise.all(
+  booksWithPaths.map(async (book: any) => ({
+    ...book,
+    cover: await getCoverImage(book.coverPath, book.book_slug),
+  }))
+);
 
 // Format price helper for server-side rendering (500 -> £5.00)
 const formatPrice = (price: number) => {

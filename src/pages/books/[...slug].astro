@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import MetadataField from '../../components/book/MetadataField.astro';
 import ChevronIcon from '../../components/icons/ChevronIcon.astro';
@@ -7,6 +8,37 @@ import { API_URL, SELECTED_CURRENCY } from '../../lib/constants';
 import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency } from '../../lib/utils';
 
 export async function getStaticPaths() {
+  // Import all cover images from assets/covers using Vite's import.meta.glob
+  const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../assets/covers/*');
+
+  // Helper function to get the optimized image for a cover filename
+  async function getCoverImage(coverFilename: string, bookSlug: string) {
+    if (!coverFilename) return null;
+    
+    // Try multiple strategies to find the cover image
+    const strategies = [
+      coverFilename,
+      `${bookSlug}.jpg`,
+      `${bookSlug}.jpeg`,
+      `${bookSlug}.png`,
+      `${bookSlug}.webp`,
+    ];
+    
+    for (const filename of strategies) {
+      if (!filename) continue;
+      
+      const imagePath = `../../assets/covers/${filename}`;
+      const imageModule = coverImages[imagePath];
+      
+      if (imageModule) {
+        const image = await imageModule();
+        return image.default;
+      }
+    }
+    
+    return null;
+  }
+
   // Fetch ALL books (no language filter - backend returns all editions)
   const response = await fetch(`${API_URL}/api/books`);
   const books: BookListItem[] = await response.json();
@@ -15,9 +47,14 @@ export async function getStaticPaths() {
     books.map(async (book) => {
       const detailResponse = await fetch(`${API_URL}/api/books/${book.book_slug}`);
       const bookData: Book = await detailResponse.json();
+      
+      // Load optimized cover for the default edition
+      const defaultEdition = bookData.editions[0];
+      const optimizedCover = await getCoverImage(defaultEdition.cover, book.book_slug);
+      
       return {
         params: { slug: book.book_slug },
-        props: { bookData },
+        props: { bookData, optimizedCover },
       };
     })
   );
@@ -25,9 +62,10 @@ export async function getStaticPaths() {
 
 interface Props {
   bookData: Book;
+  optimizedCover?: ImageMetadata | null;
 }
 
-const { bookData } = Astro.props;
+const { bookData, optimizedCover } = Astro.props;
 
 // Filter editions that have pricing in the selected currency (currently GBP)
 // This ensures we only show editions that are actually available for purchase in the selected currency
@@ -59,18 +97,43 @@ const gbpPrice = getPriceForCurrency(defaultEdition.prices, SELECTED_CURRENCY);
 //   2. Can use these to populate format/language selector dropdowns
 const availableFormats = getUniqueValues(editionsWithPricing.map(e => e.format).filter(Boolean));
 const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.language).filter(Boolean));
+
+// Detect original image format for the cover
+const getImageFormat = (cover: any) => {
+  if (!cover || typeof cover !== 'object' || !('src' in cover)) return undefined;
+  const src = cover.src || '';
+  if (src.endsWith('.png')) return 'png';
+  if (src.endsWith('.jpeg') || src.endsWith('.jpg')) return 'jpg';
+  if (src.endsWith('.webp')) return 'webp';
+  if (src.endsWith('.avif')) return 'avif';
+  return 'jpg';
+};
+
+const coverFormat = getImageFormat(optimizedCover);
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
     <div class="grid sm:grid-cols-2 gap-8 mb-8 items-end">
       <div class="flex flex-col items-center sm:items-start justify-end" style="height: calc(320px * 9 / 6);">
-        <img
-          src={defaultEdition.cover}
-          alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
-          class="rounded-lg shadow-2xl mb-4"
-          style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
-        />
+        {optimizedCover ? (
+          <Image
+            src={optimizedCover}
+            alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+            widths={[320, 640]}
+            sizes="320px"
+            format={coverFormat}
+            class="rounded-lg shadow-2xl mb-4"
+            style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
+          />
+        ) : (
+          <img
+            src={defaultEdition.cover}
+            alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+            class="rounded-lg shadow-2xl mb-4"
+            style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
+          />
+        )}
         {samplePages.length > 0 && (
           <button
             id="read-sample-btn"
