@@ -34,7 +34,7 @@ const { bookData } = Astro.props;
 // TODO: When currency selector is added:
 //   1. Replace SELECTED_CURRENCY with a reactive currency state/prop
 //   2. This filter will automatically work with the new currency
-const editionsWithPricing = bookData.editions.filter(edition => 
+const editionsWithPricing = bookData.editions.filter(edition =>
   getPriceForCurrency(edition.prices, SELECTED_CURRENCY) !== null
 );
 
@@ -42,8 +42,8 @@ const editionsWithPricing = bookData.editions.filter(edition =>
 // If no editions have pricing in selected currency, fall back to first edition
 // (will display as unavailable with disabled "Add to cart" button)
 // TODO: When adding edition selector dropdown, allow user to choose from editionsWithPricing
-const defaultEdition: Edition = editionsWithPricing.length > 0 
-  ? editionsWithPricing[0] 
+const defaultEdition: Edition = editionsWithPricing.length > 0
+  ? editionsWithPricing[0]
   : bookData.editions[0];
 
 const samplePages = extractSamplePaths(defaultEdition.samples);
@@ -95,12 +95,12 @@ const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.langua
 
             <div class="pb-4">
               <div class="space-y-2 text-sm">
-                <MetadataField 
-                  label="Cover" 
+                <MetadataField
+                  label="Cover"
                   value={[
                     defaultEdition.cover_name,
                     defaultEdition.cover_artist ? `by ${defaultEdition.cover_artist}` : null
-                  ].filter(Boolean).join(' ')} 
+                  ].filter(Boolean).join(' ')}
                 />
                 <MetadataField label="Pages" value={defaultEdition.page_count} />
                 <MetadataField label="Language" value={defaultEdition.language} />
@@ -186,20 +186,37 @@ const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.langua
           </div>
 
 
-          <button
-            id="add-to-cart-btn"
-            data-book-id={defaultEdition.id}
-            data-book-title={defaultEdition.title}
-            data-book-price={gbpPrice}
-            data-book-cover={defaultEdition.cover}
-            data-book-slug={bookData.book_slug}
-            data-book-format={defaultEdition.format || 'eBook'}
-            data-book-language={defaultEdition.language || 'English'}
-            class="btn btn-primary btn-lg btn-block"
-            disabled={gbpPrice === null}
-          >
-            {gbpPrice !== null ? 'Add to cart' : 'Not available in GBP'}
-          </button>
+          <div class="flex w-full flex-col lg:flex-row">
+            <button
+              id="add-to-cart-btn"
+              data-book-id={defaultEdition.id}
+              data-book-title={defaultEdition.title}
+              data-book-price={gbpPrice}
+              data-book-cover={defaultEdition.cover}
+              data-book-slug={bookData.book_slug}
+              data-book-format={defaultEdition.format || 'eBook'}
+              data-book-language={defaultEdition.language || 'English'}
+              class="btn btn-outline btn-lg grow"
+              disabled={gbpPrice === null}
+            >
+              {gbpPrice !== null ? 'Add to cart' : 'Not available in GBP'}
+            </button>
+            <div class="divider lg:divider-horizontal"></div>
+            <button
+              id="checkout-btn"
+              data-book-id={defaultEdition.id}
+              data-book-title={defaultEdition.title}
+              data-book-price={gbpPrice}
+              data-book-cover={defaultEdition.cover}
+              data-book-slug={bookData.book_slug}
+              data-book-format={defaultEdition.format || 'eBook'}
+              data-book-language={defaultEdition.language || 'English'}
+              class="btn btn-primary btn-lg grow"
+              disabled={gbpPrice === null}
+            >
+              Buy now
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -415,6 +432,26 @@ const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.langua
         }
       });
 
+
+      const checkoutBtn = document.getElementById('checkout-btn') as HTMLButtonElement;
+
+      checkoutBtn?.addEventListener('click', () => {
+        try {
+          Cart.addItem({
+            id: Number(checkoutBtn.dataset.bookId!),
+            title: checkoutBtn.dataset.bookTitle!,
+            price: parseInt(checkoutBtn.dataset.bookPrice!),
+            cover: checkoutBtn.dataset.bookCover,
+            slug: checkoutBtn.dataset.bookSlug,
+            format: checkoutBtn.dataset.bookFormat,
+            language: checkoutBtn.dataset.bookLanguage,
+          });
+
+          window.location.href = '/checkout';
+        } catch (err) {
+          alert((err as Error).message);
+        }
+      });
 
       const readSampleBtn = document.getElementById('read-sample-btn');
       const sampleModal = document.getElementById('sample-modal') as HTMLDivElement;
