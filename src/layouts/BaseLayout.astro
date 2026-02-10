@@ -138,14 +138,16 @@ const { title = 'Catalog' } = Astro.props;
       }
 
       function initializeLayout() {
-        // Restore theme after navigation
-        const savedTheme = localStorage.getItem('theme');
-        const theme = savedTheme || 'autumn';
-        document.documentElement.setAttribute('data-theme', theme);
-
         setupTheme();
         setupCart();
       }
+
+      // Apply theme before the swap to prevent flash
+      document.addEventListener('astro:before-swap', (ev) => {
+        const savedTheme = localStorage.getItem('theme');
+        const theme = savedTheme || 'autumn';
+        ev.newDocument.documentElement.setAttribute('data-theme', theme);
+      });
 
       // Run on initial load and after view transitions
       document.addEventListener('astro:page-load', initializeLayout);
