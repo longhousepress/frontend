@@ -190,11 +190,14 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
         const item = Cart.getItems().find(i => i.id === idNum);
         if (!item) return;
 
-        if (action === 'inc') Cart.updateQuantity(idNum, item.quantity + 1);
-        if (action === 'dec' && item.quantity > 1) Cart.updateQuantity(idNum, item.quantity - 1);
-        if (action === 'remove') Cart.removeItem(idNum);
-
-        renderCart();
+        try {
+          if (action === 'inc') Cart.updateQuantity(idNum, item.quantity + 1);
+          if (action === 'dec' && item.quantity > 1) Cart.updateQuantity(idNum, item.quantity - 1);
+          if (action === 'remove') Cart.removeItem(idNum);
+          renderCart();
+        } catch (err) {
+          alert((err as Error).message);
+        }
       });
 
       elements.items.addEventListener('focus', (e) => {
@@ -211,8 +214,13 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
         const value = parseInt(input.value) || 1;
         const idNum = input.dataset.id !== undefined ? Number(input.dataset.id) : NaN;
         if (!Number.isNaN(idNum)) {
-          Cart.updateQuantity(idNum, value);
-          renderCart();
+          try {
+            Cart.updateQuantity(idNum, value);
+            renderCart();
+          } catch (err) {
+            alert((err as Error).message);
+            renderCart();
+          }
         }
       }, true);
 

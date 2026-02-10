@@ -11,6 +11,7 @@ export interface CartItem {
 
 export class Cart {
   private static STORAGE_KEY = 'ebook-cart';
+  private static MAX_TOTAL_QUANTITY = 50;
 
   static getItems(): CartItem[] {
     const stored = localStorage.getItem(this.STORAGE_KEY);
@@ -31,6 +32,11 @@ export class Cart {
   static addItem(item: Omit<CartItem, 'quantity'>): void {
     const items = this.getItems();
     const existing = items.find(i => i.id === item.id);
+
+    const currentTotal = this.getCount();
+    if (currentTotal >= this.MAX_TOTAL_QUANTITY) {
+      throw new Error(`Cannot add more items. Maximum quantity of ${this.MAX_TOTAL_QUANTITY} items reached.`);
+    }
 
     if (existing) {
       existing.quantity += 1;
@@ -54,6 +60,14 @@ export class Cart {
       if (quantity <= 0) {
         this.removeItem(id);
       } else {
+        const otherItemsTotal = items
+          .filter(i => i.id !== id)
+          .reduce((sum, i) => sum + i.quantity, 0);
+        
+        if (otherItemsTotal + quantity > this.MAX_TOTAL_QUANTITY) {
+          throw new Error(`Cannot update quantity. Maximum total of ${this.MAX_TOTAL_QUANTITY} items allowed.`);
+        }
+        
         item.quantity = quantity;
         this.saveItems(items);
       }
@@ -62,6 +76,10 @@ export class Cart {
 
   static getCount(): number {
     return this.getItems().reduce((sum, item) => sum + item.quantity, 0);
+  }
+
+  static getMaxQuantity(): number {
+    return this.MAX_TOTAL_QUANTITY;
   }
 
   static getTotal(): number {

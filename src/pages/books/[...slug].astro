@@ -390,25 +390,29 @@ const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.langua
       const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
 
       btn?.addEventListener('click', () => {
-        Cart.addItem({
-          id: Number(btn.dataset.bookId!),
-          title: btn.dataset.bookTitle!,
-          price: parseInt(btn.dataset.bookPrice!),
-          cover: btn.dataset.bookCover,
-          slug: btn.dataset.bookSlug,
-          format: btn.dataset.bookFormat,
-          language: btn.dataset.bookLanguage,
-        });
+        try {
+          Cart.addItem({
+            id: Number(btn.dataset.bookId!),
+            title: btn.dataset.bookTitle!,
+            price: parseInt(btn.dataset.bookPrice!),
+            cover: btn.dataset.bookCover,
+            slug: btn.dataset.bookSlug,
+            format: btn.dataset.bookFormat,
+            language: btn.dataset.bookLanguage,
+          });
 
 
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Successfully added';
+          const originalText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Successfully added';
 
-        setTimeout(() => {
-          btn.disabled = false;
-          btn.textContent = originalText;
-        }, CART_SUCCESS_MESSAGE_DURATION);
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }, CART_SUCCESS_MESSAGE_DURATION);
+        } catch (err) {
+          alert((err as Error).message);
+        }
       });
 
 
