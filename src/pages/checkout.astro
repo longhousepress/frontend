@@ -133,7 +133,8 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
         const cover = li.querySelector('.item-cover') as HTMLImageElement;
         const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
         if (item.cover) {
-          cover.src = item.cover;
+          // Backend returns just filename, prepend /covers/ to get the path
+          cover.src = item.cover.startsWith('/') ? item.cover : `/covers/${item.cover}`;
           cover.alt = item.title;
           noCover.classList.add('hidden');
         } else {

@@ -138,8 +138,8 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
       const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
 
       if (edition.cover) {
-        // Cover is in public folder, so use it directly without API URL
-        cover.src = edition.cover;
+        // Backend returns just filename, prepend /covers/ to get the path
+        cover.src = edition.cover.startsWith('/') ? edition.cover : `/covers/${edition.cover}`;
         cover.alt = edition.title;
         noCover.classList.add('hidden');
       } else {
