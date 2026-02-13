@@ -34,18 +34,8 @@ const {
 // Determine if img is an imported asset or a string path
 const isImportedAsset = img && typeof img === 'object' && 'src' in img;
 
-// Detect original image format to preserve it
-const getImageFormat = (img: any) => {
-  if (!isImportedAsset) return undefined;
-  const src = img.src || '';
-  if (src.endsWith('.png')) return 'png';
-  if (src.endsWith('.jpeg') || src.endsWith('.jpg')) return 'jpg';
-  if (src.endsWith('.webp')) return 'webp';
-  if (src.endsWith('.avif')) return 'avif';
-  return 'jpg'; // default fallback
-};
-
-const imageFormat = getImageFormat(img);
+// Always use webp format for optimized images
+const imageFormat = isImportedAsset ? 'webp' : undefined;
 ---
 <article
   class={`group card bg-base-100 ${sizeClasses} shadow-sm hover:shadow-md transition-shadow duration-150 relative rounded-lg border-2 border-base-300`}

@@ -98,18 +98,8 @@ const gbpPrice = getPriceForCurrency(defaultEdition.prices, SELECTED_CURRENCY);
 const availableFormats = getUniqueValues(editionsWithPricing.map(e => e.format).filter(Boolean));
 const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.language).filter(Boolean));
 
-// Detect original image format for the cover
-const getImageFormat = (cover: any) => {
-  if (!cover || typeof cover !== 'object' || !('src' in cover)) return undefined;
-  const src = cover.src || '';
-  if (src.endsWith('.png')) return 'png';
-  if (src.endsWith('.jpeg') || src.endsWith('.jpg')) return 'jpg';
-  if (src.endsWith('.webp')) return 'webp';
-  if (src.endsWith('.avif')) return 'avif';
-  return 'jpg';
-};
-
-const coverFormat = getImageFormat(optimizedCover);
+// Always use webp format for optimized images
+const coverFormat = optimizedCover ? 'webp' : undefined;
 ---
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>

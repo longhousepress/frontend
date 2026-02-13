@@ -1,8 +1,23 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { SELECTED_CURRENCY } from '../lib/constants';
+import { getImage } from 'astro:assets';
 
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
+
+// Import all cover images from assets/covers using Vite's import.meta.glob
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/covers/*');
+
+// Build a map of filename -> optimized URL for client-side usage
+const coverUrlMap: Record<string, string> = {};
+for (const [path, importFn] of Object.entries(coverImages)) {
+  const filename = path.split('/').pop();
+  if (filename) {
+    const imageModule = await importFn();
+    const optimizedImage = await getImage({ src: imageModule.default, format: 'webp', width: 200 });
+    coverUrlMap[filename] = optimizedImage.src;
+  }
+}
 
 const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 // TODO: When multiple currencies are supported, replace this static usage with a dynamic currency selector/state.
@@ -11,7 +26,7 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
 ---
 
 <BaseLayout title="Shopping Cart">
-  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL} data-currency={CURRENCY}>
+  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL} data-currency={CURRENCY} data-cover-map={JSON.stringify(coverUrlMap)}>
     <div class="flex h-full flex-col bg-base-100">
       <!-- Header -->
       <div class="flex-1 px-4 py-6 sm:px-6">
@@ -132,8 +147,20 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
 
         const cover = li.querySelector('.item-cover') as HTMLImageElement;
         const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
-        if (item.cover) {
-          // Backend returns just filename, prepend /covers/ to get the path
+        
+        // Get optimized cover URL from the pre-generated map
+        const rootEl = document.querySelector<HTMLElement>('[data-cover-map]')!;
+        const coverMap = JSON.parse(rootEl?.dataset.coverMap || '{}');
+        const coverFilename = item.cover ? item.cover.split('/').pop() : null;
+        const optimizedCoverUrl = coverFilename ? coverMap[coverFilename] : null;
+        
+        if (optimizedCoverUrl) {
+          // Use optimized image from build-time map
+          cover.src = optimizedCoverUrl;
+          cover.alt = item.title;
+          noCover.classList.add('hidden');
+        } else if (item.cover) {
+          // Fallback to original path if not in optimized map
           cover.src = item.cover.startsWith('/') ? item.cover : `/covers/${item.cover}`;
           cover.alt = item.title;
           noCover.classList.add('hidden');
