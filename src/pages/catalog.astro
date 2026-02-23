@@ -43,8 +43,9 @@ async function getCoverImage(coverPath: string, bookSlug: string) {
 }
 
 // Fetch ALL books from API at build time (no language filtering - backend returns all editions)
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
-const response = await fetch(`${API_URL}/api/books`);
+// Use BUILD_API_URL for build-time fetches (must be full URL), PUBLIC_API_URL for client-side (can be empty for same-origin)
+const BUILD_API_URL = import.meta.env.BUILD_API_URL || import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+const response = await fetch(`${BUILD_API_URL}/api/books`);
 const booksRaw = await response.json();
 
 // Flatten all editions from all books that have pricing in the selected currency

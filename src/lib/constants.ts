@@ -1,5 +1,5 @@
 // API Configuration
-export const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
+export const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 
 // Currency Configuration
 // Currently hardcoded to GBP, but structured for easy currency selector integration

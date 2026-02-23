@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getImage } from 'astro:assets';
 
-const API_URL = import.meta.env.PUBLIC_API_URL || 'http://192.168.0.241:8000';
+const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 
 // Import all cover images from assets/covers using Vite's import.meta.glob
 const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/covers/*');

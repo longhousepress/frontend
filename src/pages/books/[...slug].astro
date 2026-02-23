@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import MetadataField from '../../components/book/MetadataField.astro';
 import ChevronIcon from '../../components/icons/ChevronIcon.astro';
 import type { Book, BookListItem, Edition } from '../../types/book';
-import { API_URL, SELECTED_CURRENCY } from '../../lib/constants';
+import { SELECTED_CURRENCY } from '../../lib/constants';
 import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency } from '../../lib/utils';
 
 export async function getStaticPaths() {
@@ -40,12 +40,14 @@ export async function getStaticPaths() {
   }
 
   // Fetch ALL books (no language filter - backend returns all editions)
-  const response = await fetch(`${API_URL}/api/books`);
+  // Use BUILD_API_URL for build-time fetches (must be full URL), PUBLIC_API_URL for client-side (can be empty for same-origin)
+  const BUILD_API_URL = import.meta.env.BUILD_API_URL || import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
+  const response = await fetch(`${BUILD_API_URL}/api/books`);
   const books: BookListItem[] = await response.json();
 
   return await Promise.all(
     books.map(async (book) => {
-      const detailResponse = await fetch(`${API_URL}/api/books/${book.book_slug}`);
+      const detailResponse = await fetch(`${BUILD_API_URL}/api/books/${book.book_slug}`);
       const bookData: Book = await detailResponse.json();
       
       // Load optimized cover for the default edition
