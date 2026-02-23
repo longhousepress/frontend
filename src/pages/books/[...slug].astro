@@ -463,16 +463,25 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
 
       btn?.addEventListener('click', () => {
         try {
-          Cart.addItem({
-            id: Number(btn.dataset.bookId!),
-            title: btn.dataset.bookTitle!,
-            price: parseInt(btn.dataset.bookPrice!),
-            cover: btn.dataset.bookCover,
-            slug: btn.dataset.bookSlug,
-            format: btn.dataset.bookFormat,
-            language: btn.dataset.bookLanguage,
-          });
+          // Defensive extraction/validation of dataset values to avoid adding malformed items
+          const id = btn.dataset.bookId !== undefined ? Number(btn.dataset.bookId) : NaN;
+          const title = btn.dataset.bookTitle ?? '';
+          const price = btn.dataset.bookPrice !== undefined ? parseInt(btn.dataset.bookPrice) : NaN;
 
+          if (!Number.isFinite(id) || !title || !Number.isFinite(price)) {
+            // If data is invalid, skip adding to cart and log a warning.
+            console.warn('Invalid add-to-cart dataset — skipping addItem', { id, title, price });
+          } else {
+            Cart.addItem({
+              id,
+              title,
+              price,
+              cover: btn.dataset.bookCover,
+              slug: btn.dataset.bookSlug,
+              format: btn.dataset.bookFormat,
+              language: btn.dataset.bookLanguage,
+            });
+          }
 
           const originalText = btn.textContent;
           btn.disabled = true;
@@ -492,15 +501,30 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
 
       checkoutBtn?.addEventListener('click', () => {
         try {
-          Cart.addItem({
-            id: Number(checkoutBtn.dataset.bookId!),
-            title: checkoutBtn.dataset.bookTitle!,
-            price: parseInt(checkoutBtn.dataset.bookPrice!),
-            cover: checkoutBtn.dataset.bookCover,
-            slug: checkoutBtn.dataset.bookSlug,
-            format: checkoutBtn.dataset.bookFormat,
-            language: checkoutBtn.dataset.bookLanguage,
-          });
+          // Defensive extraction/validation of dataset values before attempting to add to cart.
+          // If the dataset is missing or invalid, skip addItem and still navigate to checkout.
+          const id = checkoutBtn.dataset.bookId !== undefined ? Number(checkoutBtn.dataset.bookId) : NaN;
+          const title = checkoutBtn.dataset.bookTitle ?? '';
+          const price = checkoutBtn.dataset.bookPrice !== undefined ? parseInt(checkoutBtn.dataset.bookPrice) : NaN;
+
+          if (Number.isFinite(id) && title && Number.isFinite(price)) {
+            try {
+              Cart.addItem({
+                id,
+                title,
+                price,
+                cover: checkoutBtn.dataset.bookCover,
+                slug: checkoutBtn.dataset.bookSlug,
+                format: checkoutBtn.dataset.bookFormat,
+                language: checkoutBtn.dataset.bookLanguage,
+              });
+            } catch (err) {
+              // If adding fails for any reason, do not block navigation to checkout.
+              console.warn('Failed to add item before checkout — continuing to checkout', err);
+            }
+          } else {
+            console.warn('Checkout button dataset missing or invalid — skipping addItem', { id, title, price });
+          }
 
           window.location.href = '/checkout';
         } catch (err) {

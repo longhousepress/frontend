@@ -30,18 +30,48 @@ export class Cart {
   }
 
   static addItem(item: Omit<CartItem, 'quantity'>): void {
+    // Defensive validation to prevent malformed items being stored in the cart.
+    const id = Number(item?.id);
+    const title = (item?.title ?? '').toString().trim();
+    const price = Number(item?.price);
+
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error('Invalid item id');
+    }
+
+    if (!title) {
+      throw new Error('Invalid item title');
+    }
+
+    if (!Number.isFinite(price) || price < 0) {
+      throw new Error('Invalid item price');
+    }
+
     const items = this.getItems();
-    const existing = items.find(i => i.id === item.id);
+    const existing = items.find(i => i.id === id);
 
     const currentTotal = this.getCount();
     if (currentTotal >= this.MAX_TOTAL_QUANTITY) {
       throw new Error(`Cannot add more items. Maximum quantity of ${this.MAX_TOTAL_QUANTITY} items reached.`);
     }
 
+    // If the item already exists, ensure increasing it won't exceed the max total quantity.
     if (existing) {
+      if (currentTotal + 1 > this.MAX_TOTAL_QUANTITY) {
+        throw new Error(`Cannot add more items. Maximum quantity of ${this.MAX_TOTAL_QUANTITY} items reached.`);
+      }
       existing.quantity += 1;
     } else {
-      items.push({ ...item, quantity: 1 });
+      items.push({
+        id,
+        title,
+        price,
+        cover: item?.cover,
+        slug: item?.slug,
+        format: item?.format,
+        language: item?.language,
+        quantity: 1,
+      });
     }
 
     this.saveItems(items);
