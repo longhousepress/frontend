@@ -97,11 +97,11 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
-    <!-- Outer wrapper: left column sizes the row, right column is absolutely positioned to match -->
-    <div class="grid sm:grid-cols-2 gap-8 mb-8">
+    <!-- Outer wrapper: stacks on mobile, grid on desktop -->
+    <div class="flex flex-col sm:grid sm:grid-cols-2 gap-8 mb-8">
 
       <!-- LEFT COLUMN: sizes the row via cover aspect ratio, read-sample pinned to bottom -->
-      <div class="flex flex-col justify-between pt-6 pl-2">
+      <div class="flex flex-col justify-between pt-6 pl-2 sm:min-h-0">
         <div class="pb-4">
           {optimizedCover ? (
             <Image
@@ -136,9 +136,9 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
         )}
       </div>
 
-      <!-- RIGHT COLUMN: relative wrapper so inner div can be absolute and not affect row height -->
-      <div class="relative">
-      <div class="absolute inset-0 flex flex-col overflow-hidden">
+      <!-- RIGHT COLUMN: static on mobile, absolute positioning on desktop -->
+      <div class="relative sm:min-h-0">
+      <div class="static sm:absolute sm:inset-0 flex flex-col sm:overflow-hidden">
 
         <div class="pt-6">
           <div class="metadata-section mb-4">
