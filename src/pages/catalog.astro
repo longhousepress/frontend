@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BookCard from '../components/BookCard.astro';
 import { SELECTED_CURRENCY } from '../lib/constants';
-import { getPriceForCurrency } from '../lib/utils';
+import { getPriceForCurrency, formatPrice } from '../lib/utils';
 
 // Import all cover images from the nested assets/<book-slug>/cover structure
 // This allows Astro to optimize images at build time
@@ -83,9 +83,7 @@ const books = await Promise.all(
 );
 
 // Format price helper for server-side rendering (500 -> £5.00)
-const formatPrice = (price: number) => {
-  return `£${(price / 100).toFixed(2)}`;
-};
+
 
 // Extract all unique categories from books
 const allCategories = Array.from(

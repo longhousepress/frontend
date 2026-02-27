@@ -303,7 +303,7 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
 
 
       <div class="flex justify-center bg-white p-4">
-        <img id="page-image" src="" alt="Book sample page" class="max-h-[75vh] w-auto" />
+        <img id="page-image" src="" alt="Book sample page" class="max-h-[75vh] w-auto" loading="lazy" />
       </div>
 
 
@@ -549,10 +549,9 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
       function updateSampleDisplay() {
         if (!pageImage) return;
 
-        // Display current page image with lazy loading to preserve sharpness
+        // Display current page image (loading="lazy" is set in HTML to preserve sharpness)
         pageImage.src = samplePages[currentPageIndex] || '';
         pageImage.alt = `Book sample page ${currentPageIndex + 1}`;
-        pageImage.loading = 'lazy';
 
         // Update button states
         const totalPages = samplePages.length;

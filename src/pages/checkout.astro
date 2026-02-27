@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { SELECTED_CURRENCY } from '../lib/constants';
+import { formatPrice } from '../lib/utils';
 import { getImage } from 'astro:assets';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
@@ -24,7 +25,6 @@ for (const [path, importFn] of Object.entries(coverImages)) {
   }
 }
 
-const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 // TODO: When multiple currencies are supported, replace this static usage with a dynamic currency selector/state.
 // For now we keep using the hardcoded SELECTED_CURRENCY from constants (lowercased).
 const CURRENCY = SELECTED_CURRENCY.toLowerCase();
@@ -126,9 +126,9 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
 
   <script>
     import { Cart } from '../lib/cart';
+    import { formatPrice } from '../lib/utils';
 
     function setupCheckoutPage() {
-      const formatPrice = (price: number) => `£${(price / 100).toFixed(2)}`;
 
       const elements = {
         loading: document.getElementById('cart-loading')!,
