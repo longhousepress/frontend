@@ -4,17 +4,22 @@ import { getImage } from 'astro:assets';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 
-// Import all cover images from the new nested assets/<folder>/cover using Vite's import.meta.glob
+// Import all cover images from the nested assets/<book-slug>/cover using Vite's import.meta.glob
 const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/*/cover/*');
 
-// Build a map of filename -> optimized URL for client-side usage
+// Build a map of "book-slug/filename" -> optimized URL for client-side usage
+// This prevents collisions if two books happen to have the same cover filename
 const coverUrlMap: Record<string, string> = {};
 for (const [path, importFn] of Object.entries(coverImages)) {
-  const filename = path.split('/').pop();
-  if (filename) {
+  // Extract book-slug and filename from path like "../assets/book-slug/cover/filename.jpg"
+  const pathParts = path.split('/');
+  const bookSlug = pathParts[pathParts.length - 3]; // the book-slug folder
+  const filename = pathParts[pathParts.length - 1]; // the filename
+  if (bookSlug && filename) {
     const imageModule = await importFn();
     const optimizedImage = await getImage({ src: imageModule.default, format: 'webp', width: 200 });
-    coverUrlMap[filename] = optimizedImage.src;
+    // Use "book-slug/filename" as key for exact matching
+    coverUrlMap[`${bookSlug}/${filename}`] = optimizedImage.src;
   }
 }
 ---
@@ -144,7 +149,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
       books: Book[];
     }
 
-    function createOrderItemElement(edition: Edition) {
+    function createOrderItemElement(edition: Edition, bookSlug: string) {
       const clone = elements.template.content.cloneNode(true) as DocumentFragment;
       const li = clone.querySelector('li')!;
 
@@ -153,10 +158,12 @@ for (const [path, importFn] of Object.entries(coverImages)) {
       const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
 
       // Get optimized cover URL from the pre-generated map
+      // Map key format is "book-slug/filename" for exact matching
       const rootEl = document.querySelector<HTMLElement>('[data-cover-map]')!;
       const coverMap = JSON.parse(rootEl?.dataset.coverMap || '{}');
       const coverFilename = edition.cover ? edition.cover.split('/').pop() : null;
-      const optimizedCoverUrl = coverFilename ? coverMap[coverFilename] : null;
+      const coverKey = coverFilename ? `${bookSlug}/${coverFilename}` : null;
+      const optimizedCoverUrl = coverKey ? coverMap[coverKey] : null;
 
       if (optimizedCoverUrl) {
         // Use optimized image from build-time map
@@ -164,8 +171,9 @@ for (const [path, importFn] of Object.entries(coverImages)) {
         cover.alt = edition.title;
         noCover.classList.add('hidden');
       } else if (edition.cover) {
-        // Fallback to original path if not in optimized map
-        cover.src = edition.cover.startsWith('/') ? edition.cover : `/covers/${edition.cover}`;
+        // Fallback to backend API if not in optimized map
+        const apiUrl = rootEl?.dataset.apiUrl || '';
+        cover.src = `${apiUrl}/covers/${bookSlug}/${edition.cover}`;
         cover.alt = edition.title;
         noCover.classList.add('hidden');
       } else {
@@ -376,7 +384,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
         // Create and append elements from template for each edition
         data.books.forEach((book: Book) => {
           book.editions.forEach((edition: Edition) => {
-            const itemElement = createOrderItemElement(edition);
+            const itemElement = createOrderItemElement(edition, book.book_slug);
             elements.items.appendChild(itemElement);
           });
         });

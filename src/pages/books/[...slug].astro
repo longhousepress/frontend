@@ -8,28 +8,25 @@ import { SELECTED_CURRENCY } from '../../lib/constants';
 import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency } from '../../lib/utils';
 
 export async function getStaticPaths() {
-  // Import all cover images from the new nested assets/<book-folder>/cover using Vite's import.meta.glob
+  // Import all cover images from the nested assets/<book-folder>/cover using Vite's import.meta.glob
   const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../assets/*/cover/*');
-  const sampleImages = import.meta.glob<{ default: ImageMetadata }>('../../assets/*/samples/*');
 
   // Helper function to get the optimized image for a cover filename
+  // Backend provides just the filename (e.g., "book-slug.jpg")
+  // Assets are stored at ../../assets/<book-slug>/cover/<filename>
   async function getCoverImage(coverFilename: string, bookSlug: string) {
     if (!coverFilename) return null;
 
-    // Only accept an exact filename as provided by the backend.
-    // Do not attempt fuzzy or heuristic matching — assets must match exactly.
-    const filename = coverFilename.split('/').pop();
-    if (!filename) return null;
-
-    // Exact path under the book's folder: ../../assets/<bookSlug>/cover/<filename>
-    const exactPath = `../../assets/${bookSlug}/cover/${filename}`;
-    const exactModule = (coverImages as Record<string, any>)[exactPath];
-    if (exactModule) {
-      const image = await exactModule();
+    // Exact path only - no fuzzy matching, no fallbacks
+    const exactPath = `../../assets/${bookSlug}/cover/${coverFilename}`;
+    const imageModule = coverImages[exactPath];
+    
+    if (imageModule) {
+      const image = await imageModule();
       return image.default;
     }
 
-    // If not found, do not attempt further fuzzy searching; return null so callers can fall back.
+    // Not found in optimized assets
     return null;
   }
 
@@ -47,27 +44,10 @@ export async function getStaticPaths() {
       // Load optimized cover for the default edition
       const defaultEdition = bookData.editions[0];
       const optimizedCover = await getCoverImage(defaultEdition.cover, book.book_slug);
-      
-      // Build a filename -> optimized URL map for sample images (exact-match)
-      const sampleUrlMap: Record<string, string> = {};
-      if (typeof sampleImages !== 'undefined') {
-        for (const [sPath, importFn] of Object.entries(sampleImages)) {
-          const fname = sPath.split('/').pop();
-          if (!fname) continue;
-          try {
-            const mod = await (importFn as () => Promise<{ default: ImageMetadata }>)();
-            // prefer .default.src if present (ImageMetadata), otherwise use default or src
-            const src = (mod as any).default?.src ?? (mod as any).default ?? (mod as any).src ?? null;
-            if (src) sampleUrlMap[fname] = src;
-          } catch (err) {
-            // ignore import failures for optional sample assets
-          }
-        }
-      }
 
       return {
         params: { slug: book.book_slug },
-        props: { bookData, optimizedCover, sampleUrlMap },
+        props: { bookData, optimizedCover },
       };
     })
   );
@@ -76,10 +56,9 @@ export async function getStaticPaths() {
 interface Props {
   bookData: Book;
   optimizedCover?: ImageMetadata | null;
-  sampleUrlMap?: Record<string, string>;
 }
 
-const { bookData, optimizedCover, sampleUrlMap = {} } = Astro.props;
+const { bookData, optimizedCover } = Astro.props;
 
 // Filter editions that have pricing in the selected currency (currently GBP)
 // This ensures we only show editions that are actually available for purchase in the selected currency
@@ -143,7 +122,7 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
             id="read-sample-btn"
             class="btn btn-outline btn-sm w-full max-w-[320px]"
             data-sample-pages={JSON.stringify(samplePages)}
-            data-sample-map={JSON.stringify(sampleUrlMap)}
+            data-book-slug={bookData.book_slug}
           >
             Read a sample
           </button>
@@ -554,25 +533,26 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
       const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
       const pageSlider = document.getElementById('page-slider') as HTMLInputElement;
 
-      // Get sample pages from data attribute and resolve them using the sample map (exact-match only)
+      // Get sample pages from data attribute
+      // Sample pages are served unoptimized from public/samples/<book-slug>/ to preserve sharpness
       const samplePagesData = readSampleBtn?.getAttribute('data-sample-pages');
-      const sampleMapData = readSampleBtn?.getAttribute('data-sample-map');
+      const bookSlug = readSampleBtn?.getAttribute('data-book-slug');
       const samplePagesRaw: string[] = samplePagesData ? JSON.parse(samplePagesData) : [];
-      const sampleMap: Record<string, string> = sampleMapData ? JSON.parse(sampleMapData) : {};
-      // Resolve each raw sample entry by filename against the server-built sampleMap.
-      // If an exact filename match exists in sampleMap, use the optimized URL; otherwise fall back to the original value.
+      
+      // Build full URLs to unoptimized sample images in public folder
       const samplePages: string[] = samplePagesRaw.map(p => {
-        const fname = p.split('/').pop();
-        return (fname && sampleMap[fname]) ? sampleMap[fname] : p;
+        const filename = p.split('/').pop();
+        return `/samples/${bookSlug}/${filename}`;
       });
       let currentPageIndex = 0;
 
       function updateSampleDisplay() {
         if (!pageImage) return;
 
-        // Display current page image
+        // Display current page image with lazy loading to preserve sharpness
         pageImage.src = samplePages[currentPageIndex] || '';
         pageImage.alt = `Book sample page ${currentPageIndex + 1}`;
+        pageImage.loading = 'lazy';
 
         // Update button states
         const totalPages = samplePages.length;

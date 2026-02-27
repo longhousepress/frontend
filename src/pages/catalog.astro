@@ -4,38 +4,27 @@ import BookCard from '../components/BookCard.astro';
 import { SELECTED_CURRENCY } from '../lib/constants';
 import { getPriceForCurrency } from '../lib/utils';
 
-// Import all cover images from the new nested assets/<book-slug>/cover structure
+// Import all cover images from the nested assets/<book-slug>/cover structure
 // This allows Astro to optimize images at build time
 const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/*/cover/*');
 
-// Helper function to get the optimized image for a cover path
-async function getCoverImage(coverPath: string, bookSlug: string) {
-  if (!coverPath) return coverPath;
+// Helper function to get the optimized image for a cover filename
+// Backend provides just the filename (e.g., "book-slug.jpg")
+// Assets are stored at ../assets/<book-slug>/cover/<filename>
+async function getCoverImage(coverFilename: string, bookSlug: string) {
+  if (!coverFilename) return coverFilename;
 
-  // Only accept exact matches as provided by the backend.
-  // Do not attempt fuzzy or heuristic matching — assets must match exactly.
-  // The backend may provide either a path-like value (e.g. "folder/cover.jpg") or a filename ("cover.jpg").
-  const provided = coverPath;
-
-  // 1) First try exact path under the book's folder if that matches what the backend provided
-  const exactUnderBook = `../assets/${bookSlug}/cover/${provided}`;
-  const exactModule = (coverImages as Record<string, any>)[exactUnderBook];
-  if (exactModule) {
-    const image = await exactModule();
+  // Exact path only - no fuzzy matching, no fallbacks
+  const exactPath = `../assets/${bookSlug}/cover/${coverFilename}`;
+  const imageModule = coverImages[exactPath];
+  
+  if (imageModule) {
+    const image = await imageModule();
     return image.default;
   }
 
-  // 2) Next, try to find an imported asset whose import path ends with the exact string the backend provided.
-  // This is still an exact match of the backend-provided value (no guessing).
-  for (const [path, importFn] of Object.entries(coverImages)) {
-    if (path.endsWith(`/${provided}`) || path.endsWith(`/cover/${provided}`)) {
-      const image = await (importFn as () => Promise<{ default: ImageMetadata }>)();
-      return image.default;
-    }
-  }
-
-  // No exact match found in the assets; return the original backend path so callers can fall back.
-  return coverPath;
+  // Not found in optimized assets, return original path for fallback
+  return coverFilename;
 }
 
 // Fetch ALL books from API at build time (no language filtering - backend returns all editions)
