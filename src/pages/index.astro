@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { BUSINESS_NAME } from '../lib/constants';
 ---
 
 <BaseLayout title="Home">
@@ -62,7 +63,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <figure class="relative">
               <img
                 src="/hero.png"
-                alt="Longhouse Press books displayed on multiple devices"
+                alt={`${BUSINESS_NAME} books displayed on multiple devices`}
                 class="w-full"
               />
               <figcaption class="mt-4 text-sm opacity-60 text-center">
@@ -78,7 +79,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div id="why-longhouse" class="py-20 lg:py-32">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-base font-semibold text-primary tracking-wide uppercase mb-3">Why Longhouse Press</h2>
+          <h2 class="text-base font-semibold text-primary tracking-wide uppercase mb-3">Why {BUSINESS_NAME}</h2>
           <p class="text-4xl sm:text-5xl font-bold tracking-tight">
             Digital books, done right
           </p>

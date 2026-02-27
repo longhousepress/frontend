@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { BUSINESS_NAME, SUPPORT_EMAIL } from '../lib/constants';
 ---
 
 <BaseLayout title="About">
@@ -33,9 +34,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       
       <div class="collapse collapse-arrow bg-base-100 border border-base-300">
         <input type="radio" name="my-accordion-1" />
-        <div class="collapse-title font-semibold">How do I contact Longhouse Press?</div>
+        <div class="collapse-title font-semibold">How do I contact {BUSINESS_NAME}?</div>
         <div class="collapse-content text-sm">
-          <p>Email <a href="mailto:info@dragonpublishing.com" class="text-primary hover:text-primary-focus">info@dragonpublishing.com</a>. We are very responsive and happy to help with any questions or issues.</p>
+          <p>Email <a href={`mailto:${SUPPORT_EMAIL}`} class="text-primary hover:text-primary-focus">{SUPPORT_EMAIL}</a>. We are very responsive and happy to help with any questions or issues.</p>
         </div>
       </div>
     </div>

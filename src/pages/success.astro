@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getImage } from 'astro:assets';
+import { SUPPORT_EMAIL } from '../lib/constants';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 
@@ -25,7 +26,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
 ---
 
 <BaseLayout title="Order Complete">
-  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL} data-cover-map={JSON.stringify(coverUrlMap)}>
+  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL} data-cover-map={JSON.stringify(coverUrlMap)} data-support-email={SUPPORT_EMAIL}>
     <div class="flex h-full flex-col bg-base-100">
       <!-- Header -->
       <div class="flex-1 px-4 py-6 sm:px-6">
@@ -92,7 +93,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
           <p>
             If you have any issues, please contact us with your order reference
             <span id="order-reference" class="font-medium">#<span id="order-id"></span></span> at
-            <a href="mailto:info@dragonpublishing.com" class="text-primary hover:text-primary-focus">info@dragonpublishing.com</a>
+            <a href={`mailto:${SUPPORT_EMAIL}`} class="text-primary hover:text-primary-focus">{SUPPORT_EMAIL}</a>
           </p>
         </div>
       </div>
@@ -290,7 +291,8 @@ for (const [path, importFn] of Object.entries(coverImages)) {
      * Returns an <a> element with the mailto href and link text set to the support email.
      */
     function buildMailtoLink(orderRef?: string) {
-      const email = 'info@dragonpublishing.com';
+      const container = document.querySelector('[data-support-email]') as HTMLElement;
+      const email = container?.dataset.supportEmail || 'info@longhousepress.com';
       const subject = orderRef ? `Issue with order ${orderRef}` : 'Issue with order';
       const href = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
       const mail = document.createElement('a');

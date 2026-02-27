@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { SUPPORT_EMAIL } from '../lib/constants';
 ---
 
 <BaseLayout title="Privacy Policy">
@@ -11,7 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <br/>
         <p>We use <a href="https://stripe.com/">Stripe</a> to handle payments. They collect and handle all the information necessary to process your payment.</p>
         <br/>
-        <p>You can request the deletion of your email address at any time and for any reason by emailing us at <a href="mailto:info@longhousepress.com">info@longhousepress.com</a>.</p>
+        <p>You can request the deletion of your email address at any time and for any reason by emailing us at <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
     </section>
   </div>
 </BaseLayout>

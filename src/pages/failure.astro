@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { SUPPORT_EMAIL } from '../lib/constants';
 ---
 
 <BaseLayout title="Payment Failed">
@@ -31,7 +32,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
       
       <p class="text-sm opacity-60 mt-8">
-        Need help? Contact us at <a href="mailto:info@dragonpublishing.com" class="text-primary hover:text-primary-focus">info@dragonpublishing.com</a>
+        Need help? Contact us at <a href={`mailto:${SUPPORT_EMAIL}`} class="text-primary hover:text-primary-focus">{SUPPORT_EMAIL}</a>
       </p>
     </div>
   </div>

@@ -1,6 +1,11 @@
 // API Configuration
 export const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 
+// Business Configuration
+export const BUSINESS_NAME = import.meta.env.PUBLIC_BUSINESS_NAME ?? 'Longhouse Press';
+export const SUPPORT_EMAIL = import.meta.env.PUBLIC_SUPPORT_EMAIL ?? 'info@longhousepress.com';
+export const DOMAIN = import.meta.env.PUBLIC_DOMAIN ?? 'longhousepress.com';
+
 // Currency Configuration
 // Currently hardcoded to GBP, but structured for easy currency selector integration
 // 
