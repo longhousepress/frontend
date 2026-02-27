@@ -133,67 +133,62 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
       <div class="flex flex-col" style="height: calc(320px * 9 / 6);">
 
         <div class="shrink-0">
-          <details class="metadata-details mb-4">
-            <summary class="flex items-center gap-2 cursor-pointer list-none mb-4">
+          <div class="metadata-section mb-4">
+            <div class="flex items-center gap-2 cursor-pointer mb-4" id="metadata-toggle">
               <h1 class="font-bold">{defaultEdition.title}</h1>
-              <ChevronIcon class="opacity-50 hover:opacity-100 transition-all duration-200 metadata-arrow" />
-            </summary>
-
-
-            <div class="pb-4">
-              <div class="space-y-2 text-sm">
-                <MetadataField
-                  label="Cover"
-                  value={[
-                    defaultEdition.cover_name,
-                    defaultEdition.cover_artist ? `by ${defaultEdition.cover_artist}` : null
-                  ].filter(Boolean).join(' ')}
-                />
-                <MetadataField label="Pages" value={defaultEdition.page_count} />
-                <MetadataField label="Language" value={defaultEdition.language} />
-                <MetadataField label="Translator" value={defaultEdition.translator_name} />
-                <MetadataField label="Originally Published" value={bookData.original_publication_year} />
-                <MetadataField label="Original Language" value={bookData.original_language} />
-                <MetadataField label="This Edition" value={defaultEdition.publication_date} />
-                <MetadataField label="ISBN" value={defaultEdition.isbn} />
-              </div>
-              <div class="divider my-4"></div>
+              <span class="metadata-arrow opacity-50 hover:opacity-100 transition-all duration-200">▼</span>
             </div>
-          </details>
+
+            <div class="metadata-content hidden">
+              <div class="pb-4">
+                <div class="space-y-2 text-sm">
+                  <MetadataField
+                    label="Cover"
+                    value={[
+                      defaultEdition.cover_name,
+                      defaultEdition.cover_artist ? `by ${defaultEdition.cover_artist}` : null
+                    ].filter(Boolean).join(' ')}
+                  />
+                  <MetadataField label="Pages" value={defaultEdition.page_count} />
+                  <MetadataField label="Language" value={defaultEdition.language} />
+                  <MetadataField label="Translator" value={defaultEdition.translator_name} />
+                  <MetadataField label="Originally Published" value={bookData.original_publication_year} />
+                  <MetadataField label="Original Language" value={bookData.original_language} />
+                  <MetadataField label="This Edition" value={defaultEdition.publication_date ? new Date(defaultEdition.publication_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : null} />
+                  <MetadataField label="ISBN" value={defaultEdition.isbn} />
+                </div>
+                <div class="divider my-4"></div>
+              </div>
+            </div>
+          </div>
 
           {defaultEdition.author_bio ? (
-            <details class="author-details mb-6">
-              <summary class="flex items-center gap-2 cursor-pointer list-none">
+            <div class="author-section mb-6">
+              <div class="flex items-center gap-2 cursor-pointer" id="author-toggle">
                 <p class="opacity-70">by {defaultEdition.author_name}</p>
-                <ChevronIcon class="opacity-50 hover:opacity-100 transition-all duration-200 author-arrow" />
-              </summary>
-
-
-              <div class="mt-4 pb-0">
-                <p class="text-sm leading-relaxed opacity-80">{defaultEdition.author_bio}</p>
-                <div class="divider my-0"></div>
+                <span class="author-arrow opacity-50 hover:opacity-100 transition-all duration-200">▼</span>
               </div>
-            </details>
+
+              <div class="author-content hidden">
+                <div class="mt-4 pb-0">
+                  <p class="text-sm leading-relaxed opacity-80">{defaultEdition.author_bio}</p>
+                  <div class="divider my-0"></div>
+                </div>
+              </div>
+            </div>
           ) : (
             <p class="opacity-70 mb-6">by {defaultEdition.author_name}</p>
           )}
         </div>
 
 
-        <div class="flex-1 mb-6 relative overflow-hidden" id="description-wrapper">
-          <div class="h-full overflow-y-auto pr-2 description-scroll relative" id="description-container">
-            {defaultEdition.description && (
-              <div class="mb-6">
-                <div set:html={defaultEdition.description} class="text-sm leading-relaxed opacity-80"></div>
-              </div>
-            )}
-          </div>
-
-          <div class="description-fade pointer-events-none"></div>
-
-          <button class="description-scroll-btn" id="scroll-indicator" aria-label="Scroll down">
-            <ChevronIcon />
-          </button>
+        <div class="flex-1 mb-6 overflow-hidden">
+          {defaultEdition.description && (
+            <div class="text-sm leading-relaxed opacity-80">
+              <span id="description-text" set:html={defaultEdition.description}></span>
+              <button class="text-primary hidden" id="read-more-btn">… Read more</button>
+            </div>
+          )}
         </div>
 
 
@@ -328,18 +323,17 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
   )}
 
   <style>
-    .metadata-details[open] .metadata-arrow,
-    .author-details[open] .author-arrow {
+    .metadata-arrow,
+    .author-arrow {
+      display: inline-block;
+      transition: transform 0.2s;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .metadata-arrow.open,
+    .author-arrow.open {
       transform: rotate(180deg);
-    }
-
-    .metadata-details summary::-webkit-details-marker,
-    .author-details summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .description-scroll {
-      z-index: 1;
     }
 
     .custom-tooltip {
@@ -428,26 +422,68 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
     import { CART_SUCCESS_MESSAGE_DURATION } from '../../lib/constants';
 
     function setupBookDetailPage() {
-      const container = document.getElementById('description-container');
-      const wrapper = document.getElementById('description-wrapper');
-      const scrollBtn = document.getElementById('scroll-indicator');
+      // Metadata toggle
+      const metadataToggle = document.getElementById('metadata-toggle');
+      const metadataContent = document.querySelector('.metadata-content');
+      const metadataArrow = document.querySelector('.metadata-arrow');
 
-      if (container && wrapper && scrollBtn) {
-        const checkOverflow = () => {
-          const hasOverflow = container.scrollHeight > container.clientHeight;
-          wrapper.classList.toggle('has-overflow', hasOverflow);
+      metadataToggle?.addEventListener('click', () => {
+        metadataContent?.classList.toggle('hidden');
+        metadataArrow?.classList.toggle('open');
+      });
+
+      // Author toggle
+      const authorToggle = document.getElementById('author-toggle');
+      const authorContent = document.querySelector('.author-content');
+      const authorArrow = document.querySelector('.author-arrow');
+
+      authorToggle?.addEventListener('click', () => {
+        authorContent?.classList.toggle('hidden');
+        authorArrow?.classList.toggle('open');
+      });
+
+      // Description truncation
+      const descriptionText = document.getElementById('description-text');
+      const readMoreBtn = document.getElementById('read-more-btn');
+
+      if (descriptionText && readMoreBtn) {
+        let isExpanded = false;
+        let fullText = descriptionText.innerHTML;
+        
+        const checkTruncate = () => {
+          const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight);
+          const maxLines = 8;
+          const maxHeight = lineHeight * maxLines;
+          
+          if (descriptionText.scrollHeight > maxHeight) {
+            if (!isExpanded) {
+              descriptionText.style.display = '-webkit-box';
+              descriptionText.style.webkitLineClamp = maxLines.toString();
+              descriptionText.style.webkitBoxOrient = 'vertical';
+              descriptionText.style.overflow = 'hidden';
+              readMoreBtn.classList.remove('hidden');
+            }
+          }
         };
 
-        checkOverflow();
-        window.addEventListener('resize', checkOverflow);
+        checkTruncate();
 
-        scrollBtn.addEventListener('click', () => {
-          container.scrollBy({ top: 100, behavior: 'smooth' });
-        });
-
-        container.addEventListener('scroll', () => {
-          const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 10;
-          wrapper.classList.toggle('has-overflow', !isAtBottom && container.scrollHeight > container.clientHeight);
+        readMoreBtn.addEventListener('click', () => {
+          if (!isExpanded) {
+            descriptionText.style.display = 'inline';
+            descriptionText.style.webkitLineClamp = 'unset';
+            descriptionText.style.webkitBoxOrient = 'unset';
+            descriptionText.style.overflow = 'visible';
+            readMoreBtn.textContent = '… Read less';
+            isExpanded = true;
+          } else {
+            descriptionText.style.display = '-webkit-box';
+            descriptionText.style.webkitLineClamp = '8';
+            descriptionText.style.webkitBoxOrient = 'vertical';
+            descriptionText.style.overflow = 'hidden';
+            readMoreBtn.textContent = '… Read more';
+            isExpanded = false;
+          }
         });
       }
 
