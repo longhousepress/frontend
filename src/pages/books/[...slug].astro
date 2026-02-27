@@ -20,7 +20,7 @@ export async function getStaticPaths() {
     // Exact path only - no fuzzy matching, no fallbacks
     const exactPath = `../../assets/${bookSlug}/cover/${coverFilename}`;
     const imageModule = coverImages[exactPath];
-    
+
     if (imageModule) {
       const image = await imageModule();
       return image.default;
@@ -40,7 +40,7 @@ export async function getStaticPaths() {
     books.map(async (book) => {
       const detailResponse = await fetch(`${BUILD_API_URL}/api/books/${book.book_slug}`);
       const bookData: Book = await detailResponse.json();
-      
+
       // Load optimized cover for the default edition
       const defaultEdition = bookData.editions[0];
       const optimizedCover = await getCoverImage(defaultEdition.cover, book.book_slug);
@@ -98,7 +98,7 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
     <div class="grid sm:grid-cols-2 gap-8 mb-8 items-end">
-      <div class="flex flex-col items-center sm:items-start justify-end" style="height: calc(320px * 9 / 6);">
+      <div class="flex flex-col items-center sm:items-start justify-end" style="height: calc(340px * 9 / 6); padding-top: 1.5rem; padding-left: 0.5rem;">
         {optimizedCover ? (
           <Image
             src={optimizedCover}
@@ -449,12 +449,12 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
       if (descriptionText && readMoreBtn) {
         let isExpanded = false;
         let fullText = descriptionText.innerHTML;
-        
+
         const checkTruncate = () => {
           const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight);
           const maxLines = 8;
           const maxHeight = lineHeight * maxLines;
-          
+
           if (descriptionText.scrollHeight > maxHeight) {
             if (!isExpanded) {
               descriptionText.style.display = '-webkit-box';
@@ -574,7 +574,7 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
       const samplePagesData = readSampleBtn?.getAttribute('data-sample-pages');
       const bookSlug = readSampleBtn?.getAttribute('data-book-slug');
       const samplePagesRaw: string[] = samplePagesData ? JSON.parse(samplePagesData) : [];
-      
+
       // Build full URLs to unoptimized sample images in public folder
       const samplePages: string[] = samplePagesRaw.map(p => {
         const filename = p.split('/').pop();
