@@ -4,8 +4,8 @@ import { getImage } from 'astro:assets';
 
 const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 
-// Import all cover images from assets/covers using Vite's import.meta.glob
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/covers/*');
+// Import all cover images from the new nested assets/<folder>/cover using Vite's import.meta.glob
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/*/cover/*');
 
 // Build a map of filename -> optimized URL for client-side usage
 const coverUrlMap: Record<string, string> = {};
