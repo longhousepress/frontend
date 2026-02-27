@@ -97,9 +97,10 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
-    <div class="grid sm:grid-cols-2 gap-8 mb-8 items-stretch">
+    <!-- Outer wrapper: left column sizes the row, right column is absolutely positioned to match -->
+    <div class="grid sm:grid-cols-2 gap-8 mb-8">
 
-      <!-- LEFT COLUMN: image top, read-sample bottom -->
+      <!-- LEFT COLUMN: sizes the row via cover aspect ratio, read-sample pinned to bottom -->
       <div class="flex flex-col justify-between pt-6 pl-2">
         <div class="pb-4">
           {optimizedCover ? (
@@ -135,10 +136,11 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
         )}
       </div>
 
-      <!-- RIGHT COLUMN: stretches to match left, buttons pinned to bottom -->
-      <div class="flex flex-col">
+      <!-- RIGHT COLUMN: relative wrapper so inner div can be absolute and not affect row height -->
+      <div class="relative">
+      <div class="absolute inset-0 flex flex-col overflow-hidden">
 
-        <div class="shrink-0 pt-6">
+        <div class="pt-6">
           <div class="metadata-section mb-4">
             <div class="flex items-center gap-2 cursor-pointer mb-4" id="metadata-toggle">
               <h1 class="font-bold">{defaultEdition.title}</h1>
@@ -266,6 +268,7 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
 
