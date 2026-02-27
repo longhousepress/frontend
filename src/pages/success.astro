@@ -93,7 +93,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
           <p>
             If you have any issues, please contact us with your order reference
             <span id="order-reference" class="font-medium">#<span id="order-id"></span></span> at
-            <a href={`mailto:${SUPPORT_EMAIL}`} class="text-primary hover:text-primary-focus">{SUPPORT_EMAIL}</a>
+            <span id="support-email-link"></span>
           </p>
         </div>
       </div>
@@ -110,6 +110,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
       orderId: document.getElementById('order-id')!,
       customerEmail: document.getElementById('customer-email')!,
       template: document.getElementById('order-item-template') as HTMLTemplateElement,
+      supportEmailLink: document.getElementById('support-email-link')!,
     };
 
     interface FileDownload {
@@ -293,7 +294,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
     function buildMailtoLink(orderRef?: string) {
       const container = document.querySelector('[data-support-email]') as HTMLElement;
       const email = container?.dataset.supportEmail || 'info@longhousepress.com';
-      const subject = orderRef ? `Issue with order ${orderRef}` : 'Issue with order';
+      const subject = orderRef ? `Problem with order #${orderRef}` : 'Problem with order';
       const href = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
       const mail = document.createElement('a');
       mail.href = href;
@@ -394,6 +395,10 @@ for (const [path, importFn] of Object.entries(coverImages)) {
         // Update customer email and order reference
         elements.customerEmail.textContent = data.email;
         elements.orderId.textContent = data.order_reference;
+
+        // Update support email link with order reference in subject
+        elements.supportEmailLink.innerHTML = '';
+        elements.supportEmailLink.appendChild(buildMailtoLink(data.order_reference));
 
         // Clear cart after successful order
         try {
