@@ -97,27 +97,31 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
 
 <BaseLayout title={`${defaultEdition.title} - ${defaultEdition.author_name}`}>
   <div class="py-6">
-    <div class="grid sm:grid-cols-2 gap-8 mb-8 items-end">
-      <div class="flex flex-col items-center sm:items-start justify-end" style="height: calc(340px * 9 / 6); padding-top: 1.5rem; padding-left: 0.5rem;">
-        {optimizedCover ? (
-          <Image
-            src={optimizedCover}
-            alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
-            widths={[320, 640]}
-            sizes="320px"
-            format={coverFormat}
-            class="rounded-lg shadow-2xl mb-4"
-            style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
-          />
-        ) : (
-          <img
-            src={defaultEdition.cover}
-            alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
-            class="rounded-lg shadow-2xl mb-4"
-            style="width: 320px; max-width: 320px; aspect-ratio: 6 / 9; object-fit: contain;"
-          />
-        )}
-        {samplePages.length > 0 && (
+    <div class="grid sm:grid-cols-2 gap-8 mb-8 items-stretch">
+
+      <!-- LEFT COLUMN: image top, read-sample bottom -->
+      <div class="flex flex-col justify-between pt-6 pl-2">
+        <div class="pb-4">
+          {optimizedCover ? (
+            <Image
+              src={optimizedCover}
+              alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+              widths={[320, 640]}
+              sizes="320px"
+              format={coverFormat}
+              class="rounded-lg shadow-2xl"
+              style="width: 320px; max-width: 100%; aspect-ratio: 6 / 9; object-fit: contain;"
+            />
+          ) : (
+            <img
+              src={defaultEdition.cover}
+              alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+              class="rounded-lg shadow-2xl"
+              style="width: 320px; max-width: 100%; aspect-ratio: 6 / 9; object-fit: contain;"
+            />
+          )}
+        </div>
+        {samplePages.length > 0 ? (
           <button
             id="read-sample-btn"
             class="btn btn-outline btn-sm w-full max-w-[320px]"
@@ -126,13 +130,15 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
           >
             Read a sample
           </button>
+        ) : (
+          <div></div>
         )}
       </div>
 
+      <!-- RIGHT COLUMN: stretches to match left, buttons pinned to bottom -->
+      <div class="flex flex-col">
 
-      <div class="flex flex-col" style="height: calc(320px * 9 / 6);">
-
-        <div class="shrink-0">
+        <div class="shrink-0 pt-6">
           <div class="metadata-section mb-4">
             <div class="flex items-center gap-2 cursor-pointer mb-4" id="metadata-toggle">
               <h1 class="font-bold">{defaultEdition.title}</h1>
@@ -182,9 +188,9 @@ const coverFormat = optimizedCover ? 'webp' : undefined;
         </div>
 
 
-        <div class="flex-1 mb-6 overflow-hidden">
+        <div class="flex-1 mb-6 min-h-0 flex flex-col">
           {defaultEdition.description && (
-            <div class="text-sm leading-relaxed opacity-80">
+            <div class="text-sm leading-relaxed opacity-80 overflow-auto flex-1">
               <span id="description-text" set:html={defaultEdition.description}></span>
               <button class="text-primary hidden" id="read-more-btn">… Read more</button>
             </div>
