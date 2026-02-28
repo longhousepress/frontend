@@ -56,14 +56,14 @@ const imageFormat = isImportedAsset ? 'webp' : undefined;
           widths={[200, 300, 400, 600]}
           sizes="(max-width: 640px) 144px, (max-width: 768px) 176px, (max-width: 1024px) 208px, 240px"
           format={imageFormat}
-          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
+          class="w-full h-full object-cover transition-opacity duration-150 group-hover:opacity-75"
           loading="lazy"
         />
       ) : (
         <img
           src={img}
           alt={`Cover of ${title} by ${author}`}
-          class="w-full h-full object-contain transition-opacity duration-150 group-hover:opacity-75"
+          class="w-full h-full object-cover transition-opacity duration-150 group-hover:opacity-75"
           loading="lazy"
         />
       )}
