@@ -2,7 +2,11 @@
 /* stylelint-disable-next-line at-rule-no-unknown */
 @plugin "daisyui";
 @plugin "daisyui" {
-  themes: autumn --default, dim --prefersdark;
+  themes: autumn --default, sunset --prefersdark;
+}
+@plugin "daisyui/theme" {
+  name: "sunset";
+  --color-primary: #b8885a;
 }
 
 /* Navbar/menu: prefer a minimal underline-on-hover instead of the default boxed hover.

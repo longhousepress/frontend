@@ -93,7 +93,7 @@ const { title = 'Catalog' } = Astro.props;
         function updateThemeIcons(theme: string) {
           if (!sunIcon || !moonIcon) return;
 
-          if (theme === 'dim') {
+          if (theme === 'sunset') {
             sunIcon.classList.add('hidden');
             moonIcon.classList.remove('hidden');
           } else {
@@ -107,7 +107,7 @@ const { title = 'Catalog' } = Astro.props;
 
         themeToggle.addEventListener('click', () => {
           const current = html.getAttribute('data-theme');
-          const newTheme = current === 'dim' ? 'autumn' : 'dim';
+          const newTheme = current === 'sunset' ? 'autumn' : 'sunset';
 
           html.setAttribute('data-theme', newTheme);
           updateThemeIcons(newTheme);
