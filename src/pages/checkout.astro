@@ -35,7 +35,7 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
     <div class="flex h-full flex-col bg-base-100">
       <!-- Header -->
       <div class="flex-1 px-4 py-6 sm:px-6">
-        <h1 class="text-2xl font-bold text-base-content mb-8">Shopping cart</h1>
+        <h1 id="cart-header" class="text-2xl font-bold text-base-content mb-8">Shopping cart</h1>
 
         <!-- Loading state -->
         <div id="cart-loading" class="text-center py-12">
@@ -90,8 +90,8 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
 
         <!-- Empty state -->
         <div id="empty-cart" class="hidden text-center py-12">
-          <p class="text-lg opacity-70">Your cart is empty.</p>
-          <a href="/catalog" data-astro-prefetch class="btn btn-primary mt-4">Browse Books</a>
+          <p class="text-lg opacity-70 mb-4">Your cart is empty.</p>
+          <a href="/catalog" data-astro-prefetch class="inline-block text-primary hover:text-primary-focus font-medium py-3 px-4">Browse books</a>
         </div>
       </div>
 
@@ -132,6 +132,7 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
 
       const elements = {
         loading: document.getElementById('cart-loading')!,
+        header: document.getElementById('cart-header')!,
         items: document.getElementById('cart-items')!,
         empty: document.getElementById('empty-cart')!,
         form: document.getElementById('checkout-form') as HTMLFormElement,
@@ -197,12 +198,14 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
         elements.loading.classList.add('hidden');
 
         if (items.length === 0) {
+          elements.header.classList.add('hidden');
           elements.empty.classList.remove('hidden');
           elements.items.classList.add('hidden');
           elements.form.classList.add('hidden');
           return;
         }
 
+        elements.header.classList.remove('hidden');
         elements.empty.classList.add('hidden');
         elements.items.classList.remove('hidden');
         elements.form.classList.remove('hidden');
