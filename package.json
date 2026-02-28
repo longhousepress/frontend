@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:prod": "astro build --mode production",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -15,6 +16,7 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
+    "@types/node": "^25.3.3",
     "daisyui": "^5.5.14"
   }
 }
