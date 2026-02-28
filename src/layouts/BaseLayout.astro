@@ -15,7 +15,17 @@ const { title = 'Catalog' } = Astro.props;
     <!-- Prevent theme flash by setting theme immediately -->
     <script is:inline>
       const savedTheme = localStorage.getItem('theme');
-      const initialTheme = savedTheme || 'autumn';
+      let initialTheme;
+      
+      if (savedTheme) {
+        // User has explicitly set a preference
+        initialTheme = savedTheme;
+      } else {
+        // No saved preference, use system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        initialTheme = prefersDark ? 'sunset' : 'autumn';
+      }
+      
       document.documentElement.setAttribute('data-theme', initialTheme);
     </script>
   </head>
@@ -144,7 +154,15 @@ const { title = 'Catalog' } = Astro.props;
       // Apply theme before the swap to prevent flash
       document.addEventListener('astro:before-swap', (ev) => {
         const savedTheme = localStorage.getItem('theme');
-        const theme = savedTheme || 'autumn';
+        let theme;
+        
+        if (savedTheme) {
+          theme = savedTheme;
+        } else {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          theme = prefersDark ? 'sunset' : 'autumn';
+        }
+        
         ev.newDocument.documentElement.setAttribute('data-theme', theme);
       });
 
