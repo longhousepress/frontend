@@ -16,7 +16,7 @@ const { title = 'Catalog' } = Astro.props;
     <script is:inline>
       const savedTheme = localStorage.getItem('theme');
       let initialTheme;
-      
+
       if (savedTheme) {
         // User has explicitly set a preference
         initialTheme = savedTheme;
@@ -25,7 +25,7 @@ const { title = 'Catalog' } = Astro.props;
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         initialTheme = prefersDark ? 'sunset' : 'autumn';
       }
-      
+
       document.documentElement.setAttribute('data-theme', initialTheme);
     </script>
   </head>
@@ -88,7 +88,7 @@ const { title = 'Catalog' } = Astro.props;
         <span class="mx-2">|</span>
         <span>contact: <a href={`mailto:${SUPPORT_EMAIL}`} class="link link-hover">{SUPPORT_EMAIL}</a></span>
         <span class="mx-2">|</span>
-        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="link link-hover">source code</a>
+        <a href="https://github.com/longhousepress/backend" target="_blank" rel="noopener noreferrer" class="link link-hover">source code</a>
       </div>
     </footer>
 
@@ -159,14 +159,14 @@ const { title = 'Catalog' } = Astro.props;
       document.addEventListener('astro:before-swap', (ev) => {
         const savedTheme = localStorage.getItem('theme');
         let theme;
-        
+
         if (savedTheme) {
           theme = savedTheme;
         } else {
           const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
           theme = prefersDark ? 'sunset' : 'autumn';
         }
-        
+
         ev.newDocument.documentElement.setAttribute('data-theme', theme);
       });
 

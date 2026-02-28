@@ -279,39 +279,36 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
           return;
         }
 
-        // Pending Stripe verification…
-        alert('Not possible yet…');
-        
-        // try {
-        //   elements.checkout.disabled = true;
-        //   const rootEl = document.querySelector<HTMLElement>('[data-api-url]')!;
-        //   const apiUrl = rootEl?.dataset.apiUrl || '';
-        //   const currency = (rootEl?.dataset.currency || 'gbp').toLowerCase();
+        try {
+          elements.checkout.disabled = true;
+          const rootEl = document.querySelector<HTMLElement>('[data-api-url]')!;
+          const apiUrl = rootEl?.dataset.apiUrl || '';
+          const currency = (rootEl?.dataset.currency || 'gbp').toLowerCase();
 
-        //   const res = await fetch(`${apiUrl}/api/checkout`, {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ items, email, currency })
-        //   });
+          const res = await fetch(`${apiUrl}/api/checkout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items, email, currency })
+          });
 
-        //   const data = await res.json();
+          const data = await res.json();
 
-        //   if (!res.ok) {
-        //     alert(data?.message || `Checkout failed (${res.status})`);
-        //     return;
-        //   }
+          if (!res.ok) {
+            alert(data?.message || `Checkout failed (${res.status})`);
+            return;
+          }
 
-        //   if (data?.url) {
-        //     window.location.href = data.url;
-        //   } else {
-        //     alert('Checkout session not returned.');
-        //   }
-        // } catch (err) {
-        //   console.error('Checkout error:', err);
-        //   alert('Network error. Please try again.');
-        // } finally {
-        //   elements.checkout.disabled = false;
-        // }
+          if (data?.url) {
+            window.location.href = data.url;
+          } else {
+            alert('Checkout session not returned.');
+          }
+        } catch (err) {
+          console.error('Checkout error:', err);
+          alert('Network error. Please try again.');
+        } finally {
+          elements.checkout.disabled = false;
+        }
       });
 
       renderCart();
