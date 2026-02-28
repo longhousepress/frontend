@@ -91,7 +91,7 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
         <!-- Empty state -->
         <div id="empty-cart" class="hidden text-center py-12">
           <p class="text-lg opacity-70">Your cart is empty.</p>
-          <a href="/catalog" class="btn btn-primary mt-4">Browse Books</a>
+          <a href="/catalog" data-astro-prefetch class="btn btn-primary mt-4">Browse Books</a>
         </div>
       </div>
 
@@ -116,7 +116,7 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
 
         <p class="mt-6 text-center text-sm opacity-70">
           or
-          <a href="/catalog" class="font-medium text-primary hover:text-primary-focus ml-1">
+          <a href="/catalog" data-astro-prefetch class="font-medium text-primary hover:text-primary-focus ml-1">
             Continue Shopping →
           </a>
         </p>
