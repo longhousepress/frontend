@@ -10,6 +10,7 @@ import { Image } from 'astro:assets';
     - price: string (optional)
     - img: ImageMetadata | string - optimized image from src/assets or URL
     - href: string (optional) - if provided, the whole card becomes a link
+
     - sizeClasses: string (optional) - Tailwind width classes to control sizing
 
   Usage:
@@ -19,6 +20,7 @@ import { Image } from 'astro:assets';
       price="£4.99"
       img={cover080}
       href="/books/1984"
+
       sizeClasses="w-36 sm:w-44 md:w-52 lg:w-60"
     />
 */
@@ -28,6 +30,7 @@ const {
   price = "",
   img,
   href = null,
+
   sizeClasses = "w-full",
 } = Astro.props;
 

@@ -5,6 +5,7 @@ export interface Price {
 
 export interface Contributor {
   name: string;
+  slug: string;
   role: string;
   bio: string | null;
   birth_year: number | null;

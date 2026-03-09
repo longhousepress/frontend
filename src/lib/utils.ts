@@ -50,3 +50,4 @@ export function getPriceForCurrency(prices: Price[], currency: string): number |
   const priceObj = prices.find(p => p.currency === currency);
   return priceObj ? priceObj.amount : null;
 }
+
