@@ -2,7 +2,16 @@
 import "../styles/global.css";
 import { ViewTransitions } from 'astro:transitions';
 import { SUPPORT_EMAIL } from '../lib/constants';
-const { title = 'Catalog' } = Astro.props;
+
+interface Props {
+  title?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  ogUrl?: string;
+}
+
+const { title = 'Catalog', ogTitle, ogDescription, ogImage, ogUrl } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -11,6 +20,15 @@ const { title = 'Catalog' } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <link rel="icon" href="/favicon.ico" />
+    {ogTitle && <meta property="og:title" content={ogTitle} />}
+    {ogDescription && <meta property="og:description" content={ogDescription} />}
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogUrl && <meta property="og:url" content={ogUrl} />}
+    {ogTitle && <meta property="og:type" content="website" />}
+    {ogTitle && <meta name="twitter:card" content="summary_large_image" />}
+    {ogTitle && <meta name="twitter:title" content={ogTitle} />}
+    {ogDescription && <meta name="twitter:description" content={ogDescription} />}
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
     <ViewTransitions />
     <!-- Prevent theme flash by setting theme immediately -->
     <script is:inline>

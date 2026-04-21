@@ -23,6 +23,7 @@ export interface Edition {
   cover: string;
   cover_name: string | null;
   cover_artist: string | null;
+  short_description: string | null;
   description: string | null;
   categories: string[];
   format: string;
