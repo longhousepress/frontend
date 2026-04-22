@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const reason = Astro.url.searchParams.get('reason') ?? 'Something went wrong. Please try again.';
+---
+
+<BaseLayout title="Submission Error">
+  <div class="max-w-2xl mx-auto text-center py-12">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-16 w-16 mx-auto mb-4 text-error"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <h1 class="text-2xl font-bold mb-3">Submission Error</h1>
+    <p class="text-lg opacity-70 mb-6">
+      {reason}
+    </p>
+    <a href="/submissions" data-astro-prefetch class="btn btn-primary">
+      Try Again
+    </a>
+  </div>
+</BaseLayout>

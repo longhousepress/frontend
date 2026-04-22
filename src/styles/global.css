@@ -3,7 +3,7 @@
 /* DaisyUI with tree-shaking via include parameter */
 @plugin "daisyui" {
   themes: autumn --default, sunset --prefersdark;
-  include: badge, button, card, checkbox, collapse, divider, indicator, input, kbd, label, link, loading, menu, navbar, range, select, validator;
+  include: badge, button, card, checkbox, collapse, divider, fileinput, indicator, input, kbd, label, link, loading, menu, navbar, range, select, textarea, validator;
   logs: false;
 }
 
