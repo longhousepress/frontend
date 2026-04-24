@@ -157,6 +157,29 @@ const allCategories = Array.from(
               </div>
             </div>
 
+            <!-- Original/Classic Filter -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <span class="text-xs font-medium whitespace-nowrap">Type</span>
+              <span class="hidden sm:inline text-xs opacity-30">|</span>
+              <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-xs checkbox-primary original-filter rounded-sm"
+                    value="original"
+                  />
+                  <span class="text-xs">Longhouse original</span>
+                </label>
+                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    class="checkbox checkbox-xs checkbox-primary original-filter rounded-sm"
+                    value="classic"
+                  />
+                  <span class="text-xs">Classic</span>
+                </label>
+              </div>
+            </div>
 
           </div>
         </div>
@@ -182,6 +205,7 @@ const allCategories = Array.from(
             data-author={edition.author.toLowerCase()}
             data-categories={JSON.stringify(edition.categories || [])}
             data-price={(edition.price / 100).toFixed(2)}
+            data-original={edition.original ? 'true' : 'false'}
           >
             <BookCard
               title={edition.title}
@@ -324,6 +348,7 @@ const allCategories = Array.from(
     const noResults = document.getElementById('no-results');
     const bookItems = document.querySelectorAll('.book-item');
     const genreFilters = document.querySelectorAll('.genre-filter') as NodeListOf<HTMLInputElement>;
+    const originalFilters = document.querySelectorAll('.original-filter') as NodeListOf<HTMLInputElement>;
 
     // Early return if essential elements don't exist (not on catalog page)
     if (!searchInput || !booksGrid) return;
@@ -336,6 +361,11 @@ const allCategories = Array.from(
         .filter(checkbox => checkbox.checked)
         .map(checkbox => checkbox.value);
 
+      // Get selected original/classic types
+      const selectedTypes = Array.from(originalFilters)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+
       let visibleCount = 0;
 
       bookItems.forEach(item => {
@@ -343,6 +373,7 @@ const allCategories = Array.from(
         const author = (item as HTMLElement).dataset.author || '';
         const categoriesStr = (item as HTMLElement).dataset.categories || '[]';
         const categories = JSON.parse(categoriesStr);
+        const isOriginal = (item as HTMLElement).dataset.original === 'true';
 
         // Check if matches search query
         const matchesSearch = !query || title.includes(query) || author.includes(query);
@@ -351,7 +382,12 @@ const allCategories = Array.from(
         const matchesGenre = selectedGenres.length === 0 ||
           selectedGenres.some(genre => categories.includes(genre));
 
-        const matches = matchesSearch && matchesGenre;
+        // Check if matches original/classic filter (if any selected)
+        const matchesType = selectedTypes.length === 0 ||
+          (selectedTypes.includes('original') && isOriginal) ||
+          (selectedTypes.includes('classic') && !isOriginal);
+
+        const matches = matchesSearch && matchesGenre && matchesType;
 
         (item as HTMLElement).style.display = matches ? '' : 'none';
         if (matches) visibleCount++;
@@ -368,6 +404,9 @@ const allCategories = Array.from(
 
     searchInput?.addEventListener('input', filterBooks);
     genreFilters.forEach(checkbox => {
+      checkbox.addEventListener('change', filterBooks);
+    });
+    originalFilters.forEach(checkbox => {
       checkbox.addEventListener('change', filterBooks);
     });
   }
