@@ -18,7 +18,7 @@ async function getCoverImage(coverFilename: string, bookSlug: string) {
   // Exact path only - no fuzzy matching, no fallbacks
   const exactPath = `../assets/${bookSlug}/cover/${coverFilename}`;
   const imageModule = coverImages[exactPath];
-  
+
   if (imageModule) {
     const image = await imageModule();
     return image.default;
@@ -61,7 +61,7 @@ const booksWithPaths = (booksRaw || [])
           author: edition.author_name,
           price: price,
           coverPath: edition.cover, // Store original path for image lookup
-          description: edition.description,
+          description: edition.short_description,
           book_slug: book.book_slug,
           categories: edition.categories || book.categories || [],
           format: edition.format || 'eBook',
@@ -213,6 +213,8 @@ const allCategories = Array.from(
               price={formatPrice(edition.price)}
               img={edition.cover}
               href={`/books/${edition.book_slug}`}
+              description={edition.description}
+              categories={edition.categories}
             />
           </div>
         ))}

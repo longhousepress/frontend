@@ -243,6 +243,8 @@ const allCategories = Array.from(
               price={formatPrice(edition.price)}
               img={edition.cover}
               href={`/books/${edition.book_slug}`}
+              description={edition.description}
+              categories={edition.categories}
             />
           </div>
         ))}

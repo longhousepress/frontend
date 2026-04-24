@@ -10,7 +10,8 @@ import { Image } from 'astro:assets';
     - price: string (optional)
     - img: ImageMetadata | string - optimized image from src/assets or URL
     - href: string (optional) - if provided, the whole card becomes a link
-
+    - description: string (optional) - short description shown on hover
+    - categories: string[] (optional) - genres/categories shown on hover
     - sizeClasses: string (optional) - Tailwind width classes to control sizing
 
   Usage:
@@ -20,7 +21,8 @@ import { Image } from 'astro:assets';
       price="£4.99"
       img={cover080}
       href="/books/1984"
-
+      description="A dystopian novel..."
+      categories={["Fiction", "Dystopian"]}
       sizeClasses="w-36 sm:w-44 md:w-52 lg:w-60"
     />
 */
@@ -30,7 +32,8 @@ const {
   price = "",
   img,
   href = null,
-
+  description = "",
+  categories = [],
   sizeClasses = "w-full",
 } = Astro.props;
 
@@ -51,7 +54,7 @@ const imageFormat = isImportedAsset ? 'webp' : undefined;
     class={href ? "block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg" : "block rounded-lg pointer-events-none"}
     aria-label={href ? `View details for ${title} by ${author}` : undefined}
   >
-    <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md">
+    <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md relative">
       {isImportedAsset ? (
         <Image
           src={img}
@@ -59,16 +62,37 @@ const imageFormat = isImportedAsset ? 'webp' : undefined;
           widths={[200, 300, 400, 600]}
           sizes="(max-width: 640px) 144px, (max-width: 768px) 176px, (max-width: 1024px) 208px, 240px"
           format={imageFormat}
-          class="w-full h-full object-cover transition-opacity duration-150 group-hover:opacity-75"
+          class="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
           loading="lazy"
         />
       ) : (
         <img
           src={img}
           alt={`Cover of ${title} by ${author}`}
-          class="w-full h-full object-cover transition-opacity duration-150 group-hover:opacity-75"
+          class="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
           loading="lazy"
         />
+      )}
+      
+      {/* Hover Overlay */}
+      {(description || categories.length > 0) && (
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/85 transition-all duration-300 flex items-center justify-center p-4 opacity-0 group-hover:opacity-100">
+          <div class="text-center text-white flex flex-col items-center justify-center h-full">
+            {description && (
+              <p class="text-xs sm:text-sm leading-relaxed mb-3 line-clamp-6">
+                {description}
+              </p>
+            )}
+            {description && categories.length > 0 && (
+              <div class="w-16 h-px bg-white/40 mb-3"></div>
+            )}
+            {categories.length > 0 && (
+              <p class="text-xs opacity-80">
+                {categories.join(' • ')}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </figure>
 
@@ -84,3 +108,12 @@ const imageFormat = isImportedAsset ? 'webp' : undefined;
     )}
   </a>
 </article>
+
+<style>
+  .line-clamp-6 {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
