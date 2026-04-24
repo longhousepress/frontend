@@ -157,54 +157,7 @@ const allCategories = Array.from(
               </div>
             </div>
 
-            <span class="hidden sm:inline text-xs opacity-30">|</span>
 
-            <!-- Price Filter -->
-            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <span class="text-xs font-medium">Price</span>
-              <div class="flex items-center gap-2">
-                <input
-                  type="number"
-                  id="min-price"
-                  class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  value="4"
-                  min="1"
-                  max="30"
-                  step="1"
-                />
-                <div class="dual-slider-container">
-                  <div class="dual-slider-track"></div>
-                  <div id="dual-slider-range" class="dual-slider-range"></div>
-                  <input
-                    type="range"
-                    id="min-price-slider"
-                    class="dual-slider"
-                    min="1"
-                    max="30"
-                    value="4"
-                    step="1"
-                  />
-                  <input
-                    type="range"
-                    id="max-price-slider"
-                    class="dual-slider"
-                    min="1"
-                    max="30"
-                    value="10"
-                    step="1"
-                  />
-                </div>
-                <input
-                  type="number"
-                  id="max-price"
-                  class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  value="10"
-                  min="1"
-                  max="30"
-                  step="1"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -304,86 +257,7 @@ const allCategories = Array.from(
     }
   }
 
-  .dual-slider-container {
-    position: relative;
-    width: 9rem;
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-  }
 
-  .dual-slider-track {
-    position: absolute;
-    width: 100%;
-    height: 0.25rem;
-    background: var(--bc);
-    opacity: 0.2;
-    border-radius: 0.125rem;
-    pointer-events: none;
-  }
-
-  .dual-slider-range {
-    position: absolute;
-    height: 0.25rem;
-    background: var(--color-primary);
-    border-radius: 0.125rem;
-    pointer-events: none;
-  }
-
-  .dual-slider {
-    position: absolute;
-    width: 100%;
-    height: 1.5rem;
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    pointer-events: none;
-    margin: 0;
-  }
-
-  .dual-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    background: var(--color-primary);
-    cursor: pointer;
-    pointer-events: auto;
-    border: 2px solid var(--b1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    transition: box-shadow 0.2s;
-  }
-
-  .dual-slider::-moz-range-thumb {
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    background: var(--color-primary);
-    cursor: pointer;
-    pointer-events: auto;
-    border: 2px solid var(--b1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    transition: box-shadow 0.2s;
-  }
-
-  .dual-slider::-webkit-slider-thumb:hover,
-  .dual-slider::-webkit-slider-thumb:active {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
-  }
-
-  .dual-slider::-moz-range-thumb:hover,
-  .dual-slider::-moz-range-thumb:active {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
-  }
-
-  #min-price-slider {
-    z-index: 1;
-  }
-
-  #max-price-slider {
-    z-index: 2;
-  }
 </style>
 
 <!-- Catalog page scripts -->
@@ -450,34 +324,9 @@ const allCategories = Array.from(
     const noResults = document.getElementById('no-results');
     const bookItems = document.querySelectorAll('.book-item');
     const genreFilters = document.querySelectorAll('.genre-filter') as NodeListOf<HTMLInputElement>;
-    const minPriceInput = document.getElementById('min-price') as HTMLInputElement;
-    const maxPriceInput = document.getElementById('max-price') as HTMLInputElement;
-    const minPriceSlider = document.getElementById('min-price-slider') as HTMLInputElement;
-    const maxPriceSlider = document.getElementById('max-price-slider') as HTMLInputElement;
-    const sliderRange = document.getElementById('dual-slider-range') as HTMLElement;
 
     // Early return if essential elements don't exist (not on catalog page)
-    if (!searchInput || !booksGrid || !minPriceSlider || !maxPriceSlider) return;
-
-    const MIN_PRICE = 1;
-    const MAX_PRICE = 30;
-    const DEFAULT_MIN = 4;
-    const DEFAULT_MAX = 10;
-
-    // Update the visual range fill
-    function updateSliderRange() {
-      if (!minPriceSlider || !maxPriceSlider) return;
-      
-      const min = parseInt(minPriceSlider.value);
-      const max = parseInt(maxPriceSlider.value);
-      const minPercent = ((min - 1) / 29) * 100;
-      const maxPercent = ((max - 1) / 29) * 100;
-
-      if (sliderRange) {
-        sliderRange.style.left = `${minPercent}%`;
-        sliderRange.style.width = `${maxPercent - minPercent}%`;
-      }
-    }
+    if (!searchInput || !booksGrid) return;
 
     function filterBooks() {
       const query = searchInput.value.toLowerCase().trim();
@@ -486,10 +335,6 @@ const allCategories = Array.from(
       const selectedGenres = Array.from(genreFilters)
         .filter(checkbox => checkbox.checked)
         .map(checkbox => checkbox.value);
-
-      // Get price range
-      const minPrice = parseFloat(minPriceInput?.value || '0');
-      const maxPrice = parseFloat(maxPriceInput?.value || '999');
 
       let visibleCount = 0;
 
@@ -506,11 +351,7 @@ const allCategories = Array.from(
         const matchesGenre = selectedGenres.length === 0 ||
           selectedGenres.some(genre => categories.includes(genre));
 
-        // Check if matches price range
-        const bookPrice = parseFloat((item as HTMLElement).dataset.price || '0');
-        const matchesPrice = bookPrice >= minPrice && bookPrice <= maxPrice;
-
-        const matches = matchesSearch && matchesGenre && matchesPrice;
+        const matches = matchesSearch && matchesGenre;
 
         (item as HTMLElement).style.display = matches ? '' : 'none';
         if (matches) visibleCount++;
@@ -524,120 +365,6 @@ const allCategories = Array.from(
         noResults?.classList.add('hidden');
       }
     }
-
-    // Clear input value on click
-    minPriceInput?.addEventListener('click', () => {
-      minPriceInput.select();
-    });
-
-    maxPriceInput?.addEventListener('click', () => {
-      maxPriceInput.select();
-    });
-
-    // Validate min price input
-    minPriceInput?.addEventListener('blur', () => {
-      const value = parseInt(minPriceInput.value);
-      const maxValue = parseInt(maxPriceInput.value);
-
-      if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value >= maxValue) {
-        minPriceInput.value = String(DEFAULT_MIN);
-        if (minPriceSlider) {
-          minPriceSlider.value = String(DEFAULT_MIN);
-          updateSliderRange();
-          filterBooks();
-        }
-      }
-    });
-
-    // Validate max price input
-    maxPriceInput?.addEventListener('blur', () => {
-      const value = parseInt(maxPriceInput.value);
-      const minValue = parseInt(minPriceInput.value);
-
-      if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value <= minValue) {
-        maxPriceInput.value = String(DEFAULT_MAX);
-        if (maxPriceSlider) {
-          maxPriceSlider.value = String(DEFAULT_MAX);
-          updateSliderRange();
-          filterBooks();
-        }
-      }
-    });
-
-    // Sync min slider with min price input
-    minPriceSlider?.addEventListener('input', () => {
-      const minVal = parseInt(minPriceSlider.value);
-      const maxVal = parseInt(maxPriceSlider.value);
-
-      if (minVal >= maxVal) {
-        minPriceSlider.value = String(maxVal - 1);
-      }
-
-      if (minPriceInput) {
-        minPriceInput.value = minPriceSlider.value;
-        updateSliderRange();
-        filterBooks();
-      }
-    });
-
-    // Sync max slider with max price input
-    maxPriceSlider?.addEventListener('input', () => {
-      const minVal = parseInt(minPriceSlider.value);
-      const maxVal = parseInt(maxPriceSlider.value);
-
-      if (maxVal <= minVal) {
-        maxPriceSlider.value = String(minVal + 1);
-      }
-
-      if (maxPriceInput) {
-        maxPriceInput.value = maxPriceSlider.value;
-        updateSliderRange();
-        filterBooks();
-      }
-    });
-
-    // Sync min price input with slider (on Enter key)
-    minPriceInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        minPriceInput.blur();
-      }
-    });
-
-    minPriceInput?.addEventListener('change', () => {
-      const minVal = parseInt(minPriceInput.value);
-      const maxVal = parseInt(maxPriceInput.value);
-
-      if (!isNaN(minVal) && minVal >= MIN_PRICE && minVal < maxVal && minVal <= MAX_PRICE) {
-        if (minPriceSlider) {
-          minPriceSlider.value = minPriceInput.value;
-          updateSliderRange();
-          filterBooks();
-        }
-      }
-    });
-
-    // Sync max price input with slider (on Enter key)
-    maxPriceInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        maxPriceInput.blur();
-      }
-    });
-
-    maxPriceInput?.addEventListener('change', () => {
-      const minVal = parseInt(minPriceInput.value);
-      const maxVal = parseInt(maxPriceInput.value);
-
-      if (!isNaN(maxVal) && maxVal > minVal && maxVal <= MAX_PRICE && maxVal >= MIN_PRICE) {
-        if (maxPriceSlider) {
-          maxPriceSlider.value = maxPriceInput.value;
-          updateSliderRange();
-          filterBooks();
-        }
-      }
-    });
-
-    // Initialize slider range on page load
-    updateSliderRange();
 
     searchInput?.addEventListener('input', filterBooks);
     genreFilters.forEach(checkbox => {
