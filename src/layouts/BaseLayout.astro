@@ -5,13 +5,15 @@ import { SUPPORT_EMAIL } from '../lib/constants';
 
 interface Props {
   title?: string;
+  description?: string;
+  canonicalUrl?: string;
   ogTitle?: string;
   ogDescription?: string;
   ogImage?: string;
   ogUrl?: string;
 }
 
-const { title = 'Catalog', ogTitle, ogDescription, ogImage, ogUrl } = Astro.props;
+const { title = 'Catalog', description, canonicalUrl, ogTitle, ogDescription, ogImage, ogUrl } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -19,6 +21,8 @@ const { title = 'Catalog', ogTitle, ogDescription, ogImage, ogUrl } = Astro.prop
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
