@@ -5,10 +5,11 @@ export const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
 export const BUSINESS_NAME = import.meta.env.PUBLIC_BUSINESS_NAME ?? 'Longhouse Press';
 export const SUPPORT_EMAIL = import.meta.env.PUBLIC_SUPPORT_EMAIL ?? 'info@longhousepress.com';
 export const DOMAIN = import.meta.env.PUBLIC_DOMAIN ?? 'longhousepress.com';
+export const PUBLISHER_LOGO_URL = '/logo.svg';
 
 // Currency Configuration
 // Currently hardcoded to GBP, but structured for easy currency selector integration
-// 
+//
 // TO ADD A CURRENCY SELECTOR:
 // 1. Create a currency selector component (dropdown/buttons for GBP, EUR, USD, KRW, etc.)
 // 2. Store selected currency in state (React/Vue) or URL params

@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import MetadataField from '../../components/book/MetadataField.astro';
 import ChevronIcon from '../../components/icons/ChevronIcon.astro';
 import type { Book, Edition } from '../../types/book';
-import { SELECTED_CURRENCY, DOMAIN } from '../../lib/constants';
+import { SELECTED_CURRENCY, DOMAIN, BUSINESS_NAME, PUBLISHER_LOGO_URL } from '../../lib/constants';
 import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency } from '../../lib/utils';
 
 export async function getStaticPaths() {
@@ -99,6 +99,35 @@ const ogImageResult = optimizedCover
   : null;
 const ogImage = ogImageResult ? `https://${DOMAIN}${ogImageResult.src}` : undefined;
 const ogUrl = `https://${DOMAIN}/books/${bookData.book_slug}`;
+
+// JSON-LD structured data for search engines
+const jsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Book',
+  name: defaultEdition.title,
+  author: { '@type': 'Person', 'name': defaultEdition.author_name },
+  url: ogUrl,
+  image: ogImage,
+  description: ogDescription,
+  inLanguage: defaultEdition.language,
+  publisher: {
+    '@type': 'Organization',
+    name: BUSINESS_NAME,
+    logo: { '@type': 'ImageObject', url: `https://${DOMAIN}${PUBLISHER_LOGO_URL}` },
+  },
+  ...(defaultEdition.isbn && { isbn: defaultEdition.isbn }),
+  ...(defaultEdition.publication_date && { datePublished: defaultEdition.publication_date }),
+  ...(defaultEdition.page_count && { numberOfPages: defaultEdition.page_count }),
+  ...(gbpPrice !== null && {
+    offers: {
+      '@type': 'Offer',
+      price: gbpPrice,
+      priceCurrency: SELECTED_CURRENCY,
+      availability: 'https://schema.org/InStock',
+      url: ogUrl,
+    },
+  }),
+};
 ---
 
 <BaseLayout
@@ -110,6 +139,7 @@ const ogUrl = `https://${DOMAIN}/books/${bookData.book_slug}`;
   ogImage={ogImage}
   ogUrl={ogUrl}
 >
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   <div class="py-6">
     <!-- Outer wrapper: stacks on mobile, grid on desktop -->
     <div class="flex flex-col sm:grid sm:grid-cols-2 gap-8 mb-8">
