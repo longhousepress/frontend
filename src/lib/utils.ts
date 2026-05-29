@@ -1,5 +1,5 @@
 import { CURRENCY_SYMBOL, PRICE_DIVISOR } from './constants';
-import type { Price } from '../types/book';
+import type { Edition, Price } from '../types/book';
 
 /**
  * Formats a price from cents to a currency string with symbol
@@ -49,5 +49,10 @@ export function extractSamplePaths(samples: { path: string }[] | null | undefine
 export function getPriceForCurrency(prices: Price[], currency: string): number | null {
   const priceObj = prices.find(p => p.currency === currency);
   return priceObj ? priceObj.amount : null;
+}
+
+export function selectDefaultEdition(editions: Edition[], currency: string): Edition {
+  const withPricing = editions.filter(e => getPriceForCurrency(e.prices, currency) !== null);
+  return withPricing.length > 0 ? withPricing[0] : editions[0];
 }
 
