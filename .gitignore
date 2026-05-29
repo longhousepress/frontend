@@ -20,3 +20,7 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# generated assets (copied from backend at build time)
+src/assets/
+public/samples/
