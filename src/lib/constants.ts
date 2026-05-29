@@ -1,10 +1,11 @@
 // API Configuration
 export const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
+export const BUILD_API_URL = import.meta.env.BUILD_API_URL || import.meta.env.PUBLIC_API_URL || 'http://localhost:2222';
 
 // Business Configuration
 export const BUSINESS_NAME = import.meta.env.PUBLIC_BUSINESS_NAME ?? 'Longhouse Press';
-export const SUPPORT_EMAIL = import.meta.env.PUBLIC_SUPPORT_EMAIL ?? 'info@longhousepress.com';
-export const DOMAIN = import.meta.env.PUBLIC_DOMAIN ?? 'longhousepress.com';
+export const SUPPORT_EMAIL = import.meta.env.PUBLIC_SUPPORT_EMAIL ?? 'info@longhousepress.org';
+export const DOMAIN = import.meta.env.PUBLIC_DOMAIN ?? 'longhousepress.org';
 export const PUBLISHER_LOGO_URL = '/logo.svg';
 
 // Currency Configuration

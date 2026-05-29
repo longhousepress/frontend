@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-
-const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
+import { API_URL, SUPPORT_EMAIL } from '../../lib/constants';
 ---
 
 <BaseLayout title="Submissions">
@@ -50,7 +49,7 @@ const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
       </p>
 
       <p class="text-sm opacity-60 mb-8">
-        Questions before submitting? Email us at <a href="mailto:info@longhousepress.org" class="link">info@longhousepress.org</a>.
+        Questions before submitting? Email us at <a href={`mailto:${SUPPORT_EMAIL}`} class="link">{SUPPORT_EMAIL}</a>.
       </p>
     </section>
 

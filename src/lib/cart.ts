@@ -55,11 +55,8 @@ export class Cart {
       throw new Error(`Cannot add more items. Maximum quantity of ${this.MAX_TOTAL_QUANTITY} items reached.`);
     }
 
-    // If the item already exists, ensure increasing it won't exceed the max total quantity.
+    // If the item already exists, increase its quantity.
     if (existing) {
-      if (currentTotal + 1 > this.MAX_TOTAL_QUANTITY) {
-        throw new Error(`Cannot add more items. Maximum quantity of ${this.MAX_TOTAL_QUANTITY} items reached.`);
-      }
       existing.quantity += 1;
     } else {
       items.push({

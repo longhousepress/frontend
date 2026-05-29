@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import BookCard from '../../components/BookCard.astro';
-import { SELECTED_CURRENCY } from '../../lib/constants';
+import { SELECTED_CURRENCY, BUILD_API_URL } from '../../lib/constants';
 import { getPriceForCurrency, formatPrice } from '../../lib/utils';
 import type { Book, Contributor } from '../../types/book';
 
@@ -25,7 +25,6 @@ async function getCoverImage(coverFilename: string, bookSlug: string) {
 
 // Generate static paths for all unique authors at build time
 export async function getStaticPaths() {
-  const BUILD_API_URL = import.meta.env.BUILD_API_URL || import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
   const response = await fetch(`${BUILD_API_URL}/api/books`);
   const booksRaw: Book[] = await response.json();
 
@@ -51,7 +50,6 @@ const { author } = Astro.props;
 const { slug } = Astro.params;
 
 // Fetch all books and filter for this author
-const BUILD_API_URL = import.meta.env.BUILD_API_URL || import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
 const response = await fetch(`${BUILD_API_URL}/api/books`);
 const booksRaw: Book[] = await response.json();
 

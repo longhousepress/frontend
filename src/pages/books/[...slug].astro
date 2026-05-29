@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import MetadataField from '../../components/book/MetadataField.astro';
 import ChevronIcon from '../../components/icons/ChevronIcon.astro';
 import type { Book, Edition } from '../../types/book';
-import { SELECTED_CURRENCY, DOMAIN, BUSINESS_NAME, PUBLISHER_LOGO_URL } from '../../lib/constants';
+import { SELECTED_CURRENCY, DOMAIN, BUSINESS_NAME, PUBLISHER_LOGO_URL, BUILD_API_URL } from '../../lib/constants';
 import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency } from '../../lib/utils';
 
 export async function getStaticPaths() {
@@ -32,7 +32,6 @@ export async function getStaticPaths() {
 
   // Fetch ALL books (no language filter - backend returns all editions)
   // Use BUILD_API_URL for build-time fetches (must be full URL), PUBLIC_API_URL for client-side (can be empty for same-origin)
-  const BUILD_API_URL = import.meta.env.BUILD_API_URL || import.meta.env.PUBLIC_API_URL || 'http://localhost:8000';
   const response = await fetch(`${BUILD_API_URL}/api/books`);
   const books: Book[] = await response.json();
 
@@ -388,40 +387,6 @@ const jsonLd: Record<string, unknown> = {
       transform: rotate(180deg);
     }
 
-    .custom-tooltip {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-    }
-
-    .custom-tooltip .tooltip-text {
-      visibility: hidden;
-      opacity: 0;
-      background-color: rgba(0, 0, 0, 0.9);
-      color: #fff;
-      text-align: center;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      white-space: nowrap;
-
-      /* Position below button */
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      margin-top: 4px;
-      z-index: 20;
-
-      transition: opacity 0.2s, visibility 0.2s;
-    }
-
-    .custom-tooltip:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
-    }
-
-
     .sample-modal {
       position: fixed;
       top: 0;
@@ -537,7 +502,6 @@ const jsonLd: Record<string, unknown> = {
 
       if (descriptionText && readMoreBtn) {
         let isExpanded = false;
-        let fullText = descriptionText.innerHTML;
 
         const checkTruncate = () => {
           const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight);
@@ -587,7 +551,6 @@ const jsonLd: Record<string, unknown> = {
 
           if (!Number.isFinite(id) || !title || !Number.isFinite(price)) {
             // If data is invalid, skip adding to cart and log a warning.
-            console.warn('Invalid add-to-cart dataset — skipping addItem', { id, title, price });
           } else {
             Cart.addItem({
               id,
@@ -637,10 +600,8 @@ const jsonLd: Record<string, unknown> = {
               });
             } catch (err) {
               // If adding fails for any reason, do not block navigation to checkout.
-              console.warn('Failed to add item before checkout — continuing to checkout', err);
             }
           } else {
-            console.warn('Checkout button dataset missing or invalid — skipping addItem', { id, title, price });
           }
 
           window.location.href = '/checkout';

@@ -1,9 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getImage } from 'astro:assets';
-import { SUPPORT_EMAIL } from '../lib/constants';
-
-const API_URL = import.meta.env.PUBLIC_API_URL ?? '';
+import { API_URL, SUPPORT_EMAIL } from '../lib/constants';
 
 // Import all cover images from the nested assets/<book-slug>/cover using Vite's import.meta.glob
 const coverImages = import.meta.glob<{ default: ImageMetadata }>('../assets/*/cover/*');
@@ -293,7 +291,7 @@ for (const [path, importFn] of Object.entries(coverImages)) {
      */
     function buildMailtoLink(orderRef?: string) {
       const container = document.querySelector('[data-support-email]') as HTMLElement;
-      const email = container?.dataset.supportEmail || 'info@longhousepress.com';
+      const email = container?.dataset.supportEmail || 'info@longhousepress.org';
       const subject = orderRef ? `Problem with order #${orderRef}` : 'Problem with order';
       const href = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
       const mail = document.createElement('a');
@@ -405,11 +403,9 @@ for (const [path, importFn] of Object.entries(coverImages)) {
           const { Cart } = await import('../lib/cart');
           Cart.clear();
         } catch (e) {
-          console.error('Failed to clear cart:', e);
         }
 
       } catch (err) {
-        console.error('Verify error:', err);
         showPlainError('Error verifying payment. Please try again.');
       }
     }
