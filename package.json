@@ -3,9 +3,9 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "node --env-file=.env.development scripts/copy-assets.mjs && astro dev --host 0.0.0.0",
-    "build": "node --env-file=.env.production scripts/copy-assets.mjs && astro build",
-    "build:prod": "node --env-file=.env.production scripts/copy-assets.mjs && astro build --mode production",
+    "dev": "node --env-file=.env.development scripts/copy-assets.mjs && node --env-file=.env.development ./node_modules/astro/astro.js dev --host 0.0.0.0",
+    "build": "node --env-file=.env.production scripts/copy-assets.mjs && node --env-file=.env.production ./node_modules/astro/astro.js build",
+    "build:prod": "node --env-file=.env.production scripts/copy-assets.mjs && node --env-file=.env.production ./node_modules/astro/astro.js build --mode production",
     "preview": "astro preview",
     "astro": "astro"
   },
