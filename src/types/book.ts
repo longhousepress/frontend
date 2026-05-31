@@ -37,6 +37,7 @@ export interface Edition {
   isbn: string | null;
   edition_name: string | null;
   edition_notes: string | null;
+  original: boolean;
   files: string | null;
   samples: Sample[] | null;
 }
