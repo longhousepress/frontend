@@ -289,6 +289,11 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
             body: JSON.stringify({ items, email, currency })
           });
 
+          if (res.status === 404) {
+            alert('The page you requested was not available on the server.');
+            return;
+          }
+
           const data = await res.json();
 
           if (!res.ok) {

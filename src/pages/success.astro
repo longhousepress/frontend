@@ -63,14 +63,14 @@ for (const [path, importFn] of Object.entries(coverImages)) {
               <!-- Primary download button (epub) -->
               <div class="item-primary-download"></div>
               <!-- Show more link (hidden if only one format) -->
-              <button class="item-show-more text-sm text-primary hover:text-primary-focus hidden flex items-center gap-1">
+              <button class="item-show-more text-sm text-primary hover:text-primary-focus flex items-center gap-1">
                 <span>Show more formats</span>
                 <svg class="item-arrow w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
               </button>
               <!-- Additional formats (hidden by default) -->
-              <div class="item-additional-downloads hidden flex flex-col gap-2"></div>
+              <div class="item-additional-downloads flex flex-col gap-2"></div>
             </div>
           </li>
         </template>
@@ -226,19 +226,19 @@ for (const [path, importFn] of Object.entries(coverImages)) {
         const arrow = li.querySelector('.item-arrow') as SVGElement;
         const buttonText = showMoreBtn.querySelector('span') as HTMLSpanElement;
         const downloadsContainer = li.querySelector('.item-downloads') as HTMLElement;
-        
+
         showMoreBtn.addEventListener('click', () => {
           additionalContainer.classList.toggle('hidden');
           const isHidden = additionalContainer.classList.contains('hidden');
           buttonText.textContent = isHidden ? 'Show more formats' : 'Show fewer formats';
-          
+
           // Rotate arrow
           if (isHidden) {
             arrow.classList.remove('rotate-180');
           } else {
             arrow.classList.add('rotate-180');
           }
-          
+
           // Move button to bottom when expanded, back to original position when collapsed
           if (isHidden) {
             // Move button before additional downloads
@@ -349,6 +349,12 @@ for (const [path, importFn] of Object.entries(coverImages)) {
           `${apiUrl}/api/order/verify?session_id=${encodeURIComponent(sessionId)}`,
           { method: 'GET' }
         );
+
+        // Handle 404 Not Found
+        if (res.status === 404) {
+          showPlainError('The page you requested was not available on the server.');
+          return;
+        }
 
         // Handle 410 Gone responses specially
         if (res.status === 410) {
