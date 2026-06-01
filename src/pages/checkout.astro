@@ -281,7 +281,7 @@ const CURRENCY = SELECTED_CURRENCY.toLowerCase();
           elements.checkout.disabled = true;
           const rootEl = document.querySelector<HTMLElement>('[data-api-url]')!;
           const apiUrl = rootEl?.dataset.apiUrl || '';
-          const currency = (rootEl?.dataset.currency || 'gbp').toLowerCase();
+          const currency = (rootEl?.dataset.currency || 'gbp').toUpperCase();
 
           const res = await fetch(`${apiUrl}/api/checkout`, {
             method: 'POST',
