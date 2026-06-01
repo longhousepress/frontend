@@ -1,7 +1,13 @@
 ---
+import { execSync } from 'child_process';
 import "../styles/global.css";
 import { ViewTransitions } from 'astro:transitions';
 import { SUPPORT_EMAIL } from '../lib/constants';
+
+let commitHash: string | undefined;
+try {
+  commitHash = execSync('git rev-parse --short HEAD').toString().trim();
+} catch {}
 
 interface Props {
   title?: string;
@@ -113,12 +119,15 @@ const { title = 'Catalog', description, canonicalUrl, ogTitle, ogDescription, og
 
     <!-- Footer -->
     <footer class="p-4 bg-base-200 text-base-content">
-      <div class="text-right text-sm">
-        <a href="/privacy" data-astro-prefetch class="link link-hover">privacy policy</a>
-        <span class="mx-2">|</span>
-        <span>contact: <a href={`mailto:${SUPPORT_EMAIL}`} class="link link-hover">{SUPPORT_EMAIL}</a></span>
-        <span class="mx-2">|</span>
-        <a href="https://github.com/longhousepress" target="_blank" rel="noopener noreferrer" class="link link-hover">source code</a>
+      <div class="flex justify-between items-center text-sm">
+        {commitHash && <span class="text-xs opacity-15 select-none">{commitHash}</span>}
+        <div>
+          <a href="/privacy" data-astro-prefetch class="link link-hover">privacy policy</a>
+          <span class="mx-2">|</span>
+          <span>contact: <a href={`mailto:${SUPPORT_EMAIL}`} class="link link-hover">{SUPPORT_EMAIL}</a></span>
+          <span class="mx-2">|</span>
+          <a href="https://github.com/longhousepress" target="_blank" rel="noopener noreferrer" class="link link-hover">source code</a>
+        </div>
       </div>
     </footer>
 
