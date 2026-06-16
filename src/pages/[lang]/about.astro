@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { BUSINESS_NAME, SUPPORT_EMAIL } from '../../lib/constants';
+import { locales, defaultLocale, useTranslations } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return locales
+    .filter(l => l !== defaultLocale)
+    .map(lang => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+---
+
+<BaseLayout title={t('about_title')}>
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">{t('about_title')}</h1>
+
+    <div class="space-y-4">
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
+        <input type="radio" name="my-accordion-1" checked="checked" />
+        <div class="collapse-title font-semibold">{t('about_q1')}</div>
+        <div class="collapse-content text-sm">
+          <p>{t('about_a1')}</p>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title font-semibold">{t('about_q2')}</div>
+        <div class="collapse-content text-sm">
+          <p>{t('about_a2')}</p>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title font-semibold">{t('about_q3')}</div>
+        <div class="collapse-content text-sm">
+          <p>{t('about_a3')}</p>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-100 border border-base-300">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title font-semibold">{t('about_q4')} {BUSINESS_NAME}?</div>
+        <div class="collapse-content text-sm">
+          <p>{t('about_a4_pre')} <a href={`mailto:${SUPPORT_EMAIL}`} class="text-primary hover:text-primary-focus">{SUPPORT_EMAIL}</a>. {t('about_a4_post')}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

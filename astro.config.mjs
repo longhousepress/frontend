@@ -6,6 +6,13 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
   site: process.env.SITE_URL || 'https://longhousepress.org',
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'bg', 'kr'],
+    routing: {
+      prefixDefaultLocale: false,
+    },
+  },
   outDir: process.env.OUT_DIR || './dist',
   build: {
     assets: '_astro',

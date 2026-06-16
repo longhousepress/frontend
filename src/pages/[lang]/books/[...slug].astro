@@ -1,0 +1,608 @@
+---
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import MetadataField from '../../../components/book/MetadataField.astro';
+import ChevronIcon from '../../../components/icons/ChevronIcon.astro';
+import type { Book, Edition } from '../../../types/book';
+import { SELECTED_CURRENCY, DOMAIN, BUSINESS_NAME, PUBLISHER_LOGO_URL, BUILD_API_URL } from '../../../lib/constants';
+import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency, selectDefaultEdition } from '../../../lib/utils';
+import { locales, defaultLocale, useTranslations, getLocalePath } from '../../../lib/i18n';
+
+export async function getStaticPaths() {
+  const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../../assets/*/cover/*');
+
+  async function getCoverImage(coverFilename: string, bookSlug: string) {
+    if (!coverFilename) return null;
+    const exactPath = `../../../assets/${bookSlug}/cover/${coverFilename}`;
+    const imageModule = coverImages[exactPath];
+    if (imageModule) {
+      const image = await imageModule();
+      return image.default;
+    }
+    return null;
+  }
+
+  const response = await fetch(`${BUILD_API_URL}/api/books`);
+  const books: Book[] = await response.json();
+  const nonDefaultLocales = locales.filter(l => l !== defaultLocale);
+
+  return await Promise.all(
+    nonDefaultLocales.flatMap(lang =>
+      books.map(async (book) => {
+        const defaultEdition = selectDefaultEdition(book.editions, SELECTED_CURRENCY);
+        const optimizedCover = await getCoverImage(defaultEdition.cover, book.book_slug);
+        return {
+          params: { lang, slug: book.book_slug },
+          props: { bookData: book, optimizedCover },
+        };
+      })
+    )
+  );
+}
+
+interface Props {
+  bookData: Book;
+  optimizedCover?: ImageMetadata | null;
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+const { bookData, optimizedCover } = Astro.props;
+
+const editionsWithPricing = bookData.editions.filter(edition =>
+  getPriceForCurrency(edition.prices, SELECTED_CURRENCY) !== null
+);
+
+const defaultEdition: Edition = selectDefaultEdition(bookData.editions, SELECTED_CURRENCY);
+const samplePages = extractSamplePaths(defaultEdition.samples);
+const gbpPrice = getPriceForCurrency(defaultEdition.prices, SELECTED_CURRENCY);
+const availableFormats = getUniqueValues(editionsWithPricing.map(e => e.format).filter(Boolean));
+const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.language).filter(Boolean));
+const coverFormat = optimizedCover ? 'webp' : undefined;
+
+const ogTitle = `${defaultEdition.title} — ${defaultEdition.author_name}`;
+const ogDescription = defaultEdition.short_description || undefined;
+const ogImageResult = optimizedCover
+  ? await getImage({ src: optimizedCover, width: 640, format: 'webp' })
+  : null;
+const ogImage = ogImageResult ? `https://${DOMAIN}${ogImageResult.src}` : undefined;
+const ogUrl = `https://${DOMAIN}/${lang}/books/${bookData.book_slug}`;
+
+const jsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Book',
+  name: defaultEdition.title,
+  author: { '@type': 'Person', 'name': defaultEdition.author_name },
+  url: ogUrl,
+  image: ogImage,
+  description: ogDescription,
+  inLanguage: defaultEdition.language,
+  publisher: {
+    '@type': 'Organization',
+    name: BUSINESS_NAME,
+    logo: { '@type': 'ImageObject', url: `https://${DOMAIN}${PUBLISHER_LOGO_URL}` },
+  },
+  ...(defaultEdition.isbn && { isbn: defaultEdition.isbn }),
+  ...(defaultEdition.publication_date && { datePublished: defaultEdition.publication_date }),
+  ...(defaultEdition.page_count && { numberOfPages: defaultEdition.page_count }),
+  ...(gbpPrice !== null && {
+    offers: {
+      '@type': 'Offer',
+      price: gbpPrice,
+      priceCurrency: SELECTED_CURRENCY,
+      availability: 'https://schema.org/InStock',
+      url: ogUrl,
+    },
+  }),
+};
+---
+
+<BaseLayout
+  title={`${defaultEdition.title} - ${defaultEdition.author_name}`}
+  description={ogDescription}
+  canonicalUrl={ogUrl}
+  ogTitle={ogTitle}
+  ogDescription={ogDescription}
+  ogImage={ogImage}
+  ogUrl={ogUrl}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <div class="py-6">
+    <div class="flex flex-col sm:grid sm:grid-cols-2 gap-8 mb-8">
+
+      <div class="flex flex-col justify-between pt-6 pl-2 sm:min-h-0">
+        <div class="pb-4">
+          {optimizedCover ? (
+            <Image
+              src={optimizedCover}
+              alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+              widths={[320, 640]}
+              sizes="320px"
+              format={coverFormat}
+              class="rounded-lg shadow-2xl"
+              style="width: 320px; max-width: 100%; aspect-ratio: 6 / 9; object-fit: contain;"
+            />
+          ) : (
+            <img
+              src={defaultEdition.cover}
+              alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+              class="rounded-lg shadow-2xl"
+              style="width: 320px; max-width: 100%; aspect-ratio: 6 / 9; object-fit: contain;"
+            />
+          )}
+        </div>
+        {samplePages.length > 0 ? (
+          <button
+            id="read-sample-btn"
+            class="btn btn-outline btn-sm w-full max-w-[320px]"
+            data-sample-pages={JSON.stringify(samplePages)}
+            data-book-slug={bookData.book_slug}
+          >
+            {t('book_read_sample')}
+          </button>
+        ) : (
+          <div></div>
+        )}
+      </div>
+
+      <div class="relative sm:min-h-0">
+      <div class="static sm:absolute sm:inset-0 flex flex-col sm:overflow-hidden">
+
+        <div class="pt-6">
+          <div class="metadata-section mb-4">
+            <div class="flex items-center gap-2 cursor-pointer mb-4" id="metadata-toggle">
+              <h1 class="font-bold">{defaultEdition.title}</h1>
+              <span class="metadata-arrow opacity-50 hover:opacity-100 transition-all duration-200">▼</span>
+            </div>
+
+            <div class="metadata-content hidden">
+              <div class="pb-4">
+                <div class="space-y-2 text-sm">
+                  <MetadataField
+                    label={t('book_meta_cover')}
+                    value={[
+                      defaultEdition.cover_name,
+                      defaultEdition.cover_artist ? `by ${defaultEdition.cover_artist}` : null
+                    ].filter(Boolean).join(' ')}
+                  />
+                  <MetadataField label={t('book_meta_pages')} value={defaultEdition.page_count} />
+                  <MetadataField label={t('book_meta_language')} value={defaultEdition.language} />
+                  <MetadataField label={t('book_meta_translator')} value={defaultEdition.translator_name} />
+                  <MetadataField label={t('book_meta_originally_published')} value={bookData.original_publication_year} />
+                  <MetadataField label={t('book_meta_original_language')} value={bookData.original_language} />
+                  <MetadataField label={t('book_meta_this_edition')} value={defaultEdition.publication_date ? new Date(defaultEdition.publication_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : null} />
+                  <MetadataField label={t('book_meta_isbn')} value={defaultEdition.isbn} />
+                </div>
+                <div class="divider my-4"></div>
+              </div>
+            </div>
+          </div>
+
+          {defaultEdition.author_bio ? (
+            <div class="author-section mb-6">
+              <div class="flex items-center gap-2 cursor-pointer" id="author-toggle">
+                <p class="opacity-70">by {defaultEdition.author_name}</p>
+                <span class="author-arrow opacity-50 hover:opacity-100 transition-all duration-200">▼</span>
+              </div>
+
+              <div class="author-content hidden">
+                <div class="mt-4 pb-0">
+                  <p class="text-sm leading-relaxed opacity-80">{defaultEdition.author_bio}</p>
+                  <div class="divider my-0"></div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p class="opacity-70 mb-6">by {defaultEdition.author_name}</p>
+          )}
+        </div>
+
+        <div class="flex-1 mb-6 min-h-0 flex flex-col">
+          {defaultEdition.description && (
+            <div class="text-sm leading-relaxed opacity-80 overflow-auto flex-1">
+              <span id="description-text" set:html={defaultEdition.description}></span>
+              <button
+                class="text-primary hidden"
+                id="read-more-btn"
+                data-read-more={t('book_read_more')}
+                data-read-less={t('book_read_less')}
+              >{t('book_read_more')}</button>
+            </div>
+          )}
+        </div>
+
+        <div class="shrink-0">
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="flex gap-2 items-end">
+              <div class="flex flex-col gap-1">
+                <label class="text-xs opacity-70">{t('book_format_label')}</label>
+                <select class="select select-sm w-24" disabled={availableFormats.length <= 1}>
+                  {availableFormats.map((format: string) => (
+                    <option value={format} selected={format === defaultEdition.format}>
+                      {format}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="text-xs opacity-70">{t('book_language_label')}</label>
+                <select class="select select-sm w-24" disabled={availableLanguages.length <= 1}>
+                  {availableLanguages.map((language: string) => (
+                    <option value={language} selected={language === defaultEdition.language}>
+                      {language}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end">
+              <div class="text-2xl leading-8 font-bold text-primary">
+                {gbpPrice !== null ? formatPrice(gbpPrice) : t('book_price_unavailable')}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex w-full flex-col lg:flex-row">
+            <button
+              id="add-to-cart-btn"
+              data-book-id={defaultEdition.id}
+              data-book-title={defaultEdition.title}
+              data-book-price={gbpPrice}
+              data-book-cover={defaultEdition.cover}
+              data-book-slug={bookData.book_slug}
+              data-book-format={defaultEdition.format || 'eBook'}
+              data-book-language={defaultEdition.language || ''}
+              data-success-text={t('book_successfully_added')}
+              class="btn btn-outline btn-lg grow"
+              disabled={gbpPrice === null}
+            >
+              {gbpPrice !== null ? t('book_add_to_cart') : t('book_not_available')}
+            </button>
+            <div class="divider lg:divider-horizontal"></div>
+            <button
+              id="checkout-btn"
+              data-book-id={defaultEdition.id}
+              data-book-title={defaultEdition.title}
+              data-book-price={gbpPrice}
+              data-book-cover={defaultEdition.cover}
+              data-book-slug={bookData.book_slug}
+              data-book-format={defaultEdition.format || 'eBook'}
+              data-book-language={defaultEdition.language || ''}
+              data-checkout-path={getLocalePath(lang, '/checkout')}
+              class="btn btn-primary btn-lg grow"
+              disabled={gbpPrice === null}
+            >
+              {t('book_buy_now')}
+            </button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    {bookData.categories && bookData.categories.length > 0 && (
+      <>
+        <div class="divider"></div>
+        <div>
+          <h2 class="text-2xl font-bold mb-3">{t('book_categories')}</h2>
+          <div class="flex flex-wrap gap-2">
+            {bookData.categories.map((category) => (
+              <span class="badge badge-lg">{category}</span>
+            ))}
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+
+  {samplePages.length > 0 && (
+  <div id="sample-modal" class="sample-modal hidden">
+    <div class="sample-modal-backdrop"></div>
+    <div class="sample-modal-content">
+      <div class="sample-control-panel bg-base-100 flex items-center justify-between px-4 py-1 rounded-t-lg">
+        <span class="text-sm opacity-70">
+          <span class="font-medium">{defaultEdition.title}</span> — {t('book_sample')} — <span id="page-indicator" data-page-label={t('book_sample_page')} data-of-label={t('book_sample_of')}>{t('book_sample_page')} 1 {t('book_sample_of')} 4</span>
+        </span>
+        <button id="close-modal-btn" class="btn btn-sm btn-ghost">✕</button>
+      </div>
+      <div class="flex justify-center bg-white p-4">
+        <img id="page-image" src="" alt="Book sample page" class="max-h-[75vh] w-auto" loading="lazy" />
+      </div>
+      <div class="sample-control-panel bg-base-100 flex items-center justify-between gap-4 px-4 py-1 rounded-b-lg">
+        <button id="prev-page-btn" class="btn btn-xs" disabled>←</button>
+        <input id="page-slider" type="range" min="0" max="3" value="0" class="range range-xs flex-1 opacity-30" />
+        <button id="next-page-btn" class="btn btn-xs">→</button>
+      </div>
+    </div>
+  </div>
+  )}
+
+  <style>
+    .metadata-arrow,
+    .author-arrow {
+      display: inline-block;
+      transition: transform 0.2s;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .metadata-arrow.open,
+    .author-arrow.open {
+      transform: rotate(180deg);
+    }
+
+    .sample-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .sample-modal {
+        padding: 0;
+        flex-direction: column;
+        justify-content: center;
+      }
+    }
+
+    .sample-modal.hidden { display: none; }
+
+    .sample-modal-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+      z-index: 1;
+    }
+
+    .sample-modal-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 768px) {
+      .sample-modal-content {
+        max-width: 100%;
+        width: 100%;
+        max-height: 90vh;
+        height: 90vh;
+        border-radius: 0;
+      }
+    }
+
+    .sample-control-panel {
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      .sample-control-panel {
+        min-height: 3.5rem;
+      }
+
+      .sample-control-panel #close-modal-btn {
+        font-size: 2rem;
+        height: 100%;
+        min-height: 3.5rem;
+        padding: 0 1.5rem;
+      }
+
+      .sample-control-panel button {
+        height: 100%;
+        min-height: 3.5rem;
+        padding: 0 1rem;
+      }
+    }
+
+    #page-image {
+      display: block;
+      object-fit: contain;
+    }
+  </style>
+
+  <script>
+    import { Cart } from '../../../lib/cart';
+    import { CART_SUCCESS_MESSAGE_DURATION } from '../../../lib/constants';
+
+    function setupBookDetailPage() {
+      const metadataToggle = document.getElementById('metadata-toggle');
+      const metadataContent = document.querySelector('.metadata-content');
+      const metadataArrow = document.querySelector('.metadata-arrow');
+      metadataToggle?.addEventListener('click', () => {
+        metadataContent?.classList.toggle('hidden');
+        metadataArrow?.classList.toggle('open');
+      });
+
+      const authorToggle = document.getElementById('author-toggle');
+      const authorContent = document.querySelector('.author-content');
+      const authorArrow = document.querySelector('.author-arrow');
+      authorToggle?.addEventListener('click', () => {
+        authorContent?.classList.toggle('hidden');
+        authorArrow?.classList.toggle('open');
+      });
+
+      const descriptionText = document.getElementById('description-text');
+      const readMoreBtn = document.getElementById('read-more-btn') as HTMLButtonElement | null;
+
+      if (descriptionText && readMoreBtn) {
+        const readMoreText = readMoreBtn.dataset.readMore || '… Read more';
+        const readLessText = readMoreBtn.dataset.readLess || '… Read less';
+        let isExpanded = false;
+
+        const checkTruncate = () => {
+          const lineHeight = parseFloat(getComputedStyle(descriptionText).lineHeight);
+          const maxLines = 8;
+          const maxHeight = lineHeight * maxLines;
+          if (descriptionText.scrollHeight > maxHeight) {
+            if (!isExpanded) {
+              descriptionText.style.display = '-webkit-box';
+              descriptionText.style.webkitLineClamp = maxLines.toString();
+              descriptionText.style.webkitBoxOrient = 'vertical';
+              descriptionText.style.overflow = 'hidden';
+              readMoreBtn.classList.remove('hidden');
+            }
+          }
+        };
+
+        checkTruncate();
+
+        readMoreBtn.addEventListener('click', () => {
+          if (!isExpanded) {
+            descriptionText.style.display = 'inline';
+            descriptionText.style.webkitLineClamp = 'unset';
+            descriptionText.style.webkitBoxOrient = 'unset';
+            descriptionText.style.overflow = 'visible';
+            readMoreBtn.textContent = readLessText;
+            isExpanded = true;
+          } else {
+            descriptionText.style.display = '-webkit-box';
+            descriptionText.style.webkitLineClamp = '8';
+            descriptionText.style.webkitBoxOrient = 'vertical';
+            descriptionText.style.overflow = 'hidden';
+            readMoreBtn.textContent = readMoreText;
+            isExpanded = false;
+          }
+        });
+      }
+
+      const btn = document.getElementById('add-to-cart-btn') as HTMLButtonElement;
+      btn?.addEventListener('click', () => {
+        try {
+          const id = btn.dataset.bookId !== undefined ? Number(btn.dataset.bookId) : NaN;
+          const title = btn.dataset.bookTitle ?? '';
+          const price = btn.dataset.bookPrice !== undefined ? parseInt(btn.dataset.bookPrice) : NaN;
+          if (!Number.isFinite(id) || !title || !Number.isFinite(price)) {
+            // skip
+          } else {
+            Cart.addItem({
+              id,
+              title,
+              price,
+              cover: btn.dataset.bookCover,
+              slug: btn.dataset.bookSlug,
+              format: btn.dataset.bookFormat,
+              language: btn.dataset.bookLanguage,
+            });
+          }
+          const successText = btn.dataset.successText || 'Successfully added';
+          const originalText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = successText;
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = originalText;
+          }, CART_SUCCESS_MESSAGE_DURATION);
+        } catch (err) {
+          alert((err as Error).message);
+        }
+      });
+
+      const checkoutBtn = document.getElementById('checkout-btn') as HTMLButtonElement;
+      checkoutBtn?.addEventListener('click', () => {
+        try {
+          const id = checkoutBtn.dataset.bookId !== undefined ? Number(checkoutBtn.dataset.bookId) : NaN;
+          const title = checkoutBtn.dataset.bookTitle ?? '';
+          const price = checkoutBtn.dataset.bookPrice !== undefined ? parseInt(checkoutBtn.dataset.bookPrice) : NaN;
+          if (Number.isFinite(id) && title && Number.isFinite(price)) {
+            try {
+              Cart.addItem({
+                id,
+                title,
+                price,
+                cover: checkoutBtn.dataset.bookCover,
+                slug: checkoutBtn.dataset.bookSlug,
+                format: checkoutBtn.dataset.bookFormat,
+                language: checkoutBtn.dataset.bookLanguage,
+              });
+            } catch (err) {}
+          }
+          const checkoutPath = checkoutBtn.dataset.checkoutPath || '/checkout';
+          window.location.href = checkoutPath;
+        } catch (err) {
+          alert((err as Error).message);
+        }
+      });
+
+      const readSampleBtn = document.getElementById('read-sample-btn');
+      const sampleModal = document.getElementById('sample-modal') as HTMLDivElement;
+      const closeModalBtn = document.getElementById('close-modal-btn');
+      const modalBackdrop = document.querySelector('.sample-modal-backdrop') as HTMLElement;
+      const pageImage = document.getElementById('page-image') as HTMLImageElement;
+      const prevBtn = document.getElementById('prev-page-btn') as HTMLButtonElement;
+      const nextBtn = document.getElementById('next-page-btn') as HTMLButtonElement;
+      const pageSlider = document.getElementById('page-slider') as HTMLInputElement;
+      const pageIndicator = document.getElementById('page-indicator');
+
+      const pageLabel = pageIndicator?.dataset.pageLabel || 'Page';
+      const ofLabel = pageIndicator?.dataset.ofLabel || 'of';
+
+      const samplePagesData = readSampleBtn?.getAttribute('data-sample-pages');
+      const bookSlug = readSampleBtn?.getAttribute('data-book-slug');
+      const samplePagesRaw: string[] = samplePagesData ? JSON.parse(samplePagesData) : [];
+      const samplePages: string[] = samplePagesRaw.map(p => {
+        const filename = p.split('/').pop();
+        return `/samples/${bookSlug}/${filename}`;
+      });
+      let currentPageIndex = 0;
+
+      function updateSampleDisplay() {
+        if (!pageImage) return;
+        pageImage.src = samplePages[currentPageIndex] || '';
+        pageImage.alt = `Book sample page ${currentPageIndex + 1}`;
+        const totalPages = samplePages.length;
+        prevBtn.disabled = currentPageIndex === 0;
+        nextBtn.disabled = currentPageIndex >= totalPages - 1;
+        pageSlider.value = currentPageIndex.toString();
+        if (pageIndicator) {
+          pageIndicator.textContent = `${pageLabel} ${currentPageIndex + 1} ${ofLabel} ${totalPages}`;
+        }
+      }
+
+      readSampleBtn?.addEventListener('click', () => {
+        if (samplePages.length === 0) return;
+        currentPageIndex = 0;
+        pageSlider.max = (samplePages.length - 1).toString();
+        updateSampleDisplay();
+        sampleModal?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      });
+
+      const closeModal = () => {
+        sampleModal?.classList.add('hidden');
+        document.body.style.overflow = '';
+      };
+
+      closeModalBtn?.addEventListener('click', closeModal);
+      modalBackdrop?.addEventListener('click', closeModal);
+      prevBtn?.addEventListener('click', () => { if (currentPageIndex > 0) { currentPageIndex--; updateSampleDisplay(); } });
+      nextBtn?.addEventListener('click', () => { if (currentPageIndex < samplePages.length - 1) { currentPageIndex++; updateSampleDisplay(); } });
+      pageSlider?.addEventListener('input', (e) => {
+        currentPageIndex = parseInt((e.target as HTMLInputElement).value);
+        updateSampleDisplay();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (sampleModal?.classList.contains('hidden')) return;
+        if (e.key === 'ArrowLeft' && !prevBtn.disabled) { e.preventDefault(); prevBtn.click(); }
+        else if (e.key === 'ArrowRight' && !nextBtn.disabled) { e.preventDefault(); nextBtn.click(); }
+        else if (e.key === 'Escape') { e.preventDefault(); closeModal(); }
+      });
+    }
+
+    document.addEventListener('astro:page-load', setupBookDetailPage);
+  </script>
+</BaseLayout>

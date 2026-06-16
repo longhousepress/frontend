@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { SUPPORT_EMAIL } from '../../lib/constants';
+import { locales, defaultLocale, useTranslations } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return locales
+    .filter(l => l !== defaultLocale)
+    .map(lang => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+---
+
+<BaseLayout title={t('privacy_title')}>
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">{t('privacy_title')}</h1>
+
+    <section class="prose prose-lg">
+      <p>{t('privacy_p1')}</p>
+      <br/>
+      <p>{t('privacy_p2')}</p>
+      <br/>
+      <p>{t('privacy_p3_pre')} <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
+    </section>
+  </div>
+</BaseLayout>

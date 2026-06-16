@@ -1,0 +1,122 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { API_URL, SUPPORT_EMAIL } from '../../../lib/constants';
+import { locales, defaultLocale, useTranslations, getLocalePath } from '../../../lib/i18n';
+
+export function getStaticPaths() {
+  return locales
+    .filter(l => l !== defaultLocale)
+    .map(lang => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+---
+
+<BaseLayout title={t('submissions_title')}>
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4">{t('submissions_title')}</h1>
+    <section class="prose max-w-none mb-8">
+      <p class="mb-4">{t('submissions_intro')}</p>
+
+      <h2 class="text-xl font-semibold mb-3">{t('submissions_looking_h2')}</h2>
+
+      <h3 class="text-lg font-medium mb-2">{t('submissions_poetry_h3')}</h3>
+      <p class="mb-4">{t('submissions_poetry_body')}</p>
+
+      <h3 class="text-lg font-medium mb-2">{t('submissions_fiction_h3')}</h3>
+      <p class="mb-4">{t('submissions_fiction_body')}</p>
+
+      <h2 class="text-xl font-semibold mb-3">{t('submissions_who_h2')}</h2>
+      <p class="mb-4">{t('submissions_who_body')}</p>
+
+      <h2 class="text-xl font-semibold mb-3">{t('submissions_prev_h2')}</h2>
+      <p class="mb-4">{t('submissions_prev_body')}</p>
+
+      <h2 class="text-xl font-semibold mb-3">{t('submissions_simul_h2')}</h2>
+      <p class="mb-4">{t('submissions_simul_body')}</p>
+
+      <h2 class="text-xl font-semibold mb-3">{t('submissions_response_h2')}</h2>
+      <p class="mb-4">{t('submissions_response_body')}</p>
+
+      <h2 class="text-xl font-semibold mb-3">{t('submissions_ai_h2')}</h2>
+      <p class="mb-6">{t('submissions_ai_body')}</p>
+
+      <p class="text-sm opacity-60 mb-8">
+        {t('submissions_questions')} <a href={`mailto:${SUPPORT_EMAIL}`} class="link">{SUPPORT_EMAIL}</a>.
+      </p>
+    </section>
+
+    <form
+      action={`${API_URL}/api/submit`}
+      method="POST"
+      enctype="multipart/form-data"
+      class="space-y-6"
+    >
+      <div>
+        <label for="submitter" class="block text-sm font-medium mb-2">
+          {t('submissions_form_name')} <span class="text-error">*</span>
+        </label>
+        <input
+          type="text"
+          id="submitter"
+          name="submitter"
+          required
+          class="input input-bordered w-full"
+          placeholder={t('submissions_form_name_placeholder')}
+        />
+      </div>
+
+      <div>
+        <label for="submission-type" class="block text-sm font-medium mb-2">
+          {t('submissions_form_type')} <span class="text-error">*</span>
+        </label>
+        <select
+          id="submission-type"
+          name="submission_type"
+          required
+          class="select select-bordered w-full"
+        >
+          <option value="" disabled selected>{t('submissions_form_type_placeholder')}</option>
+          <option value="Poetry">{t('submissions_form_type_poetry')}</option>
+          <option value="Short Fiction">{t('submissions_form_type_fiction')}</option>
+          <option value="Other" disabled>Other</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="message" class="block text-sm font-medium mb-2">
+          {t('submissions_form_message')}
+        </label>
+        <textarea
+          id="message"
+          name="message"
+          rows="6"
+          class="textarea textarea-bordered w-full"
+          placeholder={t('submissions_form_message_placeholder')}
+        ></textarea>
+      </div>
+
+      <div>
+        <label for="file" class="block text-sm font-medium mb-2">
+          {t('submissions_form_file')} <span class="text-error">*</span>
+        </label>
+        <input
+          type="file"
+          id="file"
+          name="file"
+          required
+          accept=".pdf,.doc,.docx,.txt,.md"
+          class="file-input file-input-bordered file-input-primary w-full"
+        />
+        <p class="text-xs opacity-60 mt-2">{t('submissions_form_file_hint')}</p>
+      </div>
+
+      <div class="pt-4">
+        <button type="submit" class="btn btn-primary w-full">
+          {t('submissions_form_submit')}
+        </button>
+      </div>
+    </form>
+  </div>
+</BaseLayout>

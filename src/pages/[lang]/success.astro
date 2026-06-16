@@ -1,0 +1,372 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getImage } from 'astro:assets';
+import { API_URL, SUPPORT_EMAIL } from '../../lib/constants';
+import { locales, defaultLocale, useTranslations } from '../../lib/i18n';
+
+export function getStaticPaths() {
+  return locales
+    .filter(l => l !== defaultLocale)
+    .map(lang => ({ params: { lang } }));
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang);
+
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../assets/*/cover/*');
+
+const coverUrlMap: Record<string, string> = {};
+for (const [path, importFn] of Object.entries(coverImages)) {
+  const pathParts = path.split('/');
+  const bookSlug = pathParts[pathParts.length - 3];
+  const filename = pathParts[pathParts.length - 1];
+  if (bookSlug && filename) {
+    const imageModule = await importFn();
+    const optimizedImage = await getImage({ src: imageModule.default, format: 'webp', width: 200 });
+    coverUrlMap[`${bookSlug}/${filename}`] = optimizedImage.src;
+  }
+}
+---
+
+<BaseLayout title={t('success_title')}>
+  <div
+    class="max-w-2xl mx-auto py-6"
+    data-api-url={API_URL}
+    data-cover-map={JSON.stringify(coverUrlMap)}
+    data-support-email={SUPPORT_EMAIL}
+    data-show-more={t('success_show_more')}
+    data-show-fewer={t('success_show_fewer')}
+  >
+    <div class="flex h-full flex-col bg-base-100">
+      <div class="flex-1 px-4 py-6 sm:px-6">
+        <h1 class="text-2xl font-bold text-base-content mb-8">{t('success_header')}</h1>
+
+        <div id="order-loading" class="text-center py-12">
+          <span class="loading loading-spinner loading-lg"></span>
+          <p class="mt-4 opacity-70">{t('success_loading')}</p>
+        </div>
+
+        <ul id="order-items" class="hidden divide-y divide-base-300"></ul>
+
+        <template id="order-item-template">
+          <li class="flex py-6 gap-4">
+            <div class="shrink-0 overflow-hidden rounded-md border border-base-300" style="width: 101px; height: 152px;">
+              <img class="item-cover object-cover w-full h-full" alt="" />
+              <div class="item-no-cover bg-base-200 w-full h-full flex items-center justify-center text-xs opacity-50">
+                {t('success_no_cover')}
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col">
+              <div class="text-base font-medium mb-1">
+                <h3><span class="item-title"></span></h3>
+              </div>
+              <p class="text-sm opacity-70 item-format"></p>
+              <p class="text-sm opacity-70 item-language"></p>
+            </div>
+
+            <div class="flex flex-col gap-2 item-downloads" style="align-items: flex-start;">
+              <div class="item-primary-download"></div>
+              <button class="item-show-more text-sm text-primary hover:text-primary-focus flex items-center gap-1">
+                <span>{t('success_show_more')}</span>
+                <svg class="item-arrow w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+              <div class="item-additional-downloads flex flex-col gap-2"></div>
+            </div>
+          </li>
+        </template>
+
+        <div id="error-message" class="hidden text-center py-12">
+          <p id="error-text" class="text-lg opacity-70"></p>
+          <a href="/" data-astro-prefetch class="btn btn-primary mt-4">Return Home</a>
+        </div>
+      </div>
+
+      <div id="order-footer" class="hidden border-t border-base-300 px-4 py-6 sm:px-6">
+        <div class="text-center text-sm opacity-70">
+          <p class="mb-2">
+            {t('success_files_sent')} <span id="customer-email" class="font-medium">email@domain.com</span>
+          </p>
+          <p>
+            {t('success_contact')}
+            <span id="order-reference" class="font-medium">#<span id="order-id"></span></span> {t('success_at')}
+            <span id="support-email-link"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const elements = {
+      loading: document.getElementById('order-loading')!,
+      items: document.getElementById('order-items')!,
+      error: document.getElementById('error-message')!,
+      errorText: document.getElementById('error-text')!,
+      footer: document.getElementById('order-footer')!,
+      orderId: document.getElementById('order-id')!,
+      customerEmail: document.getElementById('customer-email')!,
+      template: document.getElementById('order-item-template') as HTMLTemplateElement,
+      supportEmailLink: document.getElementById('support-email-link')!,
+    };
+
+    interface FileDownload {
+      format: string;
+      path: string;
+    }
+
+    interface Edition {
+      id: number;
+      title: string;
+      author_name: string;
+      author_bio: string | null;
+      price: number;
+      cover: string | null;
+      description: string | null;
+      categories: string[];
+      format: string;
+      language: string | null;
+      page_count: number | null;
+      translator_name: string | null;
+      publication_date: string | null;
+      isbn: string | null;
+      edition_name: string | null;
+      files: FileDownload[];
+    }
+
+    interface Book {
+      id: number;
+      title: string;
+      author: string;
+      book_slug: string;
+      editions: Edition[];
+    }
+
+    interface OrderResponse {
+      email: string;
+      order_reference: string;
+      books: Book[];
+    }
+
+    function createOrderItemElement(edition: Edition, bookSlug: string) {
+      const clone = elements.template.content.cloneNode(true) as DocumentFragment;
+      const li = clone.querySelector('li')!;
+
+      const cover = li.querySelector('.item-cover') as HTMLImageElement;
+      const noCover = li.querySelector('.item-no-cover') as HTMLDivElement;
+
+      const rootEl = document.querySelector<HTMLElement>('[data-cover-map]')!;
+      const coverMap = JSON.parse(rootEl?.dataset.coverMap || '{}');
+      const coverFilename = edition.cover ? edition.cover.split('/').pop() : null;
+      const coverKey = coverFilename ? `${bookSlug}/${coverFilename}` : null;
+      const optimizedCoverUrl = coverKey ? coverMap[coverKey] : null;
+
+      if (optimizedCoverUrl) {
+        cover.src = optimizedCoverUrl;
+        cover.alt = edition.title;
+        noCover.classList.add('hidden');
+      } else if (edition.cover) {
+        const apiUrl = rootEl?.dataset.apiUrl || '';
+        cover.src = `${apiUrl}/covers/${bookSlug}/${edition.cover}`;
+        cover.alt = edition.title;
+        noCover.classList.add('hidden');
+      } else {
+        cover.classList.add('hidden');
+        noCover.classList.remove('hidden');
+      }
+
+      (li.querySelector('.item-title') as HTMLElement).textContent = edition.title;
+      (li.querySelector('.item-format') as HTMLElement).textContent = edition.format || 'eBook';
+      (li.querySelector('.item-language') as HTMLElement).textContent = edition.language || '';
+
+      const primaryContainer = li.querySelector('.item-primary-download') as HTMLElement;
+      const additionalContainer = li.querySelector('.item-additional-downloads') as HTMLElement;
+      const showMoreBtn = li.querySelector('.item-show-more') as HTMLButtonElement;
+      const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
+
+      const showMoreText = rootEl?.dataset.showMore || 'Show more formats';
+      const showFewerText = rootEl?.dataset.showFewer || 'Show fewer formats';
+
+      const epubFile = edition.files.find(f => f.format.toLowerCase() === 'epub');
+      const otherFiles = edition.files.filter(f => f.format.toLowerCase() !== 'epub');
+
+      if (epubFile) {
+        const downloadBtn = document.createElement('a');
+        downloadBtn.className = 'btn btn-primary btn-sm';
+        downloadBtn.style.width = '140px';
+        downloadBtn.textContent = `Download .${epubFile.format.toLowerCase()}`;
+        const href = epubFile.path.startsWith('/') ? apiUrl + epubFile.path : epubFile.path;
+        downloadBtn.href = href;
+        downloadBtn.download = '';
+        primaryContainer.appendChild(downloadBtn);
+      }
+
+      otherFiles.forEach((file) => {
+        const downloadBtn = document.createElement('a');
+        downloadBtn.className = 'btn btn-primary btn-sm';
+        downloadBtn.style.width = '140px';
+        downloadBtn.textContent = `Download .${file.format.toLowerCase()}`;
+        const href = file.path.startsWith('/') ? apiUrl + file.path : file.path;
+        downloadBtn.href = href;
+        downloadBtn.download = '';
+        additionalContainer.appendChild(downloadBtn);
+      });
+
+      if (otherFiles.length > 0) {
+        showMoreBtn.classList.remove('hidden');
+        const arrow = li.querySelector('.item-arrow') as SVGElement;
+        const buttonText = showMoreBtn.querySelector('span') as HTMLSpanElement;
+        const downloadsContainer = li.querySelector('.item-downloads') as HTMLElement;
+
+        showMoreBtn.addEventListener('click', () => {
+          additionalContainer.classList.toggle('hidden');
+          const isHidden = additionalContainer.classList.contains('hidden');
+          buttonText.textContent = isHidden ? showMoreText : showFewerText;
+          if (isHidden) {
+            arrow.classList.remove('rotate-180');
+            downloadsContainer.insertBefore(showMoreBtn, additionalContainer);
+          } else {
+            arrow.classList.add('rotate-180');
+            downloadsContainer.appendChild(showMoreBtn);
+          }
+        });
+      }
+
+      if (!epubFile && edition.files.length > 0) {
+        edition.files.forEach((file) => {
+          const downloadBtn = document.createElement('a');
+          downloadBtn.className = 'btn btn-primary btn-sm';
+          downloadBtn.style.width = '140px';
+          downloadBtn.textContent = `Download .${file.format.toLowerCase()}`;
+          const href = file.path.startsWith('/') ? apiUrl + file.path : file.path;
+          downloadBtn.href = href;
+          downloadBtn.download = '';
+          primaryContainer.appendChild(downloadBtn);
+        });
+      }
+
+      return li;
+    }
+
+    function clearUiAndShowErrorNodes(nodes: Node[]) {
+      elements.loading.classList.add('hidden');
+      elements.items.classList.add('hidden');
+      elements.footer.classList.add('hidden');
+      elements.error.classList.remove('hidden');
+      elements.errorText.textContent = '';
+      nodes.forEach(n => elements.errorText.appendChild(n));
+    }
+
+    function showPlainError(text: string) {
+      clearUiAndShowErrorNodes([document.createTextNode(text)]);
+    }
+
+    function buildMailtoLink(orderRef?: string) {
+      const container = document.querySelector('[data-support-email]') as HTMLElement;
+      const email = container?.dataset.supportEmail || 'info@longhousepress.org';
+      const subject = orderRef ? `Problem with order #${orderRef}` : 'Problem with order';
+      const href = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+      const mail = document.createElement('a');
+      mail.href = href;
+      mail.className = 'text-primary hover:text-primary-focus';
+      mail.appendChild(document.createTextNode(email));
+      return mail;
+    }
+
+    function showExpiredLinksMessage(preferredRef?: string) {
+      const nodes: Node[] = [];
+      nodes.push(document.createTextNode('The convenience links for this order have expired. Permanent download links have been sent to the email you used during checkout.'));
+      nodes.push(document.createElement('br'));
+      nodes.push(document.createElement('br'));
+      nodes.push(document.createTextNode(' '));
+      if (preferredRef) {
+        nodes.push(document.createTextNode('If you have not received the email, please contact '));
+        nodes.push(buildMailtoLink(preferredRef));
+        nodes.push(document.createTextNode(' with reference '));
+        nodes.push(document.createTextNode('#' + preferredRef));
+        nodes.push(document.createTextNode('.'));
+      } else {
+        nodes.push(document.createTextNode('If you have not received the email, please contact '));
+        nodes.push(buildMailtoLink(undefined));
+        nodes.push(document.createTextNode('.'));
+      }
+      clearUiAndShowErrorNodes(nodes);
+    }
+
+    async function verifyAndLoadOrder() {
+      const params = new URLSearchParams(location?.search ?? '');
+      const sessionId = params.get('session_id');
+
+      if (!sessionId) {
+        showPlainError('Link expired or invalid.');
+        return;
+      }
+
+      try {
+        const apiUrl = document.querySelector<HTMLElement>('[data-api-url]')?.dataset.apiUrl || '';
+        const res = await fetch(
+          `${apiUrl}/api/order/verify?session_id=${encodeURIComponent(sessionId)}`,
+          { method: 'GET' }
+        );
+
+        if (res.status === 404) {
+          showPlainError('The page you requested was not available on the server.');
+          return;
+        }
+
+        if (res.status === 410) {
+          const headerOrderId = res.headers.get('x-order-id') || res.headers.get('X-Order-Id') || null;
+          if (headerOrderId) {
+            showExpiredLinksMessage(headerOrderId);
+          } else if (sessionId) {
+            showExpiredLinksMessage(sessionId);
+          } else {
+            showExpiredLinksMessage(undefined);
+          }
+          return;
+        }
+
+        if (!res.ok) {
+          showPlainError('Payment not verified or link invalid.');
+          return;
+        }
+
+        const data: OrderResponse = await res.json();
+
+        if (!data.books || data.books.length === 0) {
+          showPlainError('No downloads available.');
+          return;
+        }
+
+        elements.loading.classList.add('hidden');
+        elements.items.classList.remove('hidden');
+        elements.footer.classList.remove('hidden');
+
+        data.books.forEach((book: Book) => {
+          book.editions.forEach((edition: Edition) => {
+            const itemElement = createOrderItemElement(edition, book.book_slug);
+            elements.items.appendChild(itemElement);
+          });
+        });
+
+        elements.customerEmail.textContent = data.email;
+        elements.orderId.textContent = data.order_reference;
+
+        elements.supportEmailLink.innerHTML = '';
+        elements.supportEmailLink.appendChild(buildMailtoLink(data.order_reference));
+
+        try {
+          const { Cart } = await import('../../lib/cart');
+          Cart.clear();
+        } catch (e) {}
+
+      } catch (err) {
+        showPlainError('Error verifying payment. Please try again.');
+      }
+    }
+
+    document.addEventListener('astro:page-load', verifyAndLoadOrder);
+  </script>
+</BaseLayout>

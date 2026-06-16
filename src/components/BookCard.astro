@@ -36,6 +36,7 @@ const {
   categories = [],
   sizeClasses = "w-full",
   original = false,
+  ribbonLabel = "Longhouse original",
 } = Astro.props;
 
 // Determine if img is an imported asset or a string path
@@ -78,7 +79,7 @@ const imageFormat = isImportedAsset ? 'webp' : undefined;
       {/* Longhouse Original Ribbon */}
       {original && (
         <div class="absolute top-0 left-0 right-0 bg-primary/90 text-primary-content text-[10px] font-semibold tracking-wide text-center py-1 z-10 uppercase">
-          Longhouse original
+          {ribbonLabel}
         </div>
       )}
 
