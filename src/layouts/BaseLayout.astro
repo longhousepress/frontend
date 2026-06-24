@@ -129,14 +129,22 @@ const t = useTranslations(lang);
     </main>
 
     <!-- Footer -->
-    <footer class="p-4 bg-base-200 text-base-content">
-      <div class="flex justify-between items-center text-sm">
-        {commitHash && <span class="text-xs opacity-15 select-none">{commitHash}</span>}
-        <div>
-          <a href={getRelativeLocaleUrl(lang, '/privacy')} data-astro-prefetch class="link link-hover">{t('footer_privacy')}</a>
-          <span class="mx-2">|</span>
+    <footer class="p-4 bg-base-200 text-base-content text-sm">
+      <!-- Mobile: single right-aligned column -->
+      <div class="flex flex-col items-end gap-1 sm:hidden">
+        <span>{t('footer_contact')}: <a href={`mailto:${SUPPORT_EMAIL}`} class="link link-hover">{SUPPORT_EMAIL}</a></span>
+        <a href={getRelativeLocaleUrl(lang, '/privacy')} data-astro-prefetch class="link link-hover">{t('footer_privacy')}</a>
+        <div class="flex justify-between w-full">
+          <span class="text-xs opacity-15 select-none">{commitHash}</span>
+          <a href="https://github.com/longhousepress" target="_blank" rel="noopener noreferrer" class="link link-hover">{t('footer_source')}</a>
+        </div>
+      </div>
+      <!-- Desktop: two-column spread -->
+      <div class="hidden sm:flex justify-between items-center">
+        <span class="text-xs opacity-15 select-none">{commitHash ?? ''}</span>
+        <div class="flex items-center gap-3">
           <span>{t('footer_contact')}: <a href={`mailto:${SUPPORT_EMAIL}`} class="link link-hover">{SUPPORT_EMAIL}</a></span>
-          <span class="mx-2">|</span>
+          <span class="opacity-20">|</span>
           <a href="https://github.com/longhousepress" target="_blank" rel="noopener noreferrer" class="link link-hover">{t('footer_source')}</a>
         </div>
       </div>
