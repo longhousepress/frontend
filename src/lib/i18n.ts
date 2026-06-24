@@ -15,6 +15,16 @@ export function getLanguage(locale: string | undefined): string {
   return localeToLanguage[defaultLocale];
 }
 
+export function getIso639Name(code: string, locale?: string): string {
+  try {
+    const displayLocale = (locale && locales.includes(locale as Locale)) ? locale : defaultLocale;
+    const names = new Intl.DisplayNames([displayLocale], { type: 'language' });
+    return names.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 export type CurrencyConfig = {
   code: string;
   symbol: string;

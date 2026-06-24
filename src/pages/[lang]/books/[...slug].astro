@@ -7,7 +7,7 @@ import type { Book, Edition } from '../../../types/book';
 import { DOMAIN, BUSINESS_NAME, PUBLISHER_LOGO_URL, BUILD_API_URL } from '../../../lib/constants';
 import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency, selectDefaultEdition } from '../../../lib/utils';
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { locales, useTranslations, getLanguage, getCurrencyConfig } from '../../../lib/i18n';
+import { locales, useTranslations, getLanguage, getIso639Name, getCurrencyConfig } from '../../../lib/i18n';
 
 export async function getStaticPaths() {
   const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../../assets/*/cover/*');
@@ -175,10 +175,10 @@ const jsonLd: Record<string, unknown> = {
                     ].filter(Boolean).join(' ')}
                   />
                   <MetadataField label={t('book_meta_pages')} value={defaultEdition.page_count} />
-                  <MetadataField label={t('book_meta_language')} value={defaultEdition.language} />
+                  <MetadataField label={t('book_meta_language')} value={defaultEdition.language ? getIso639Name(defaultEdition.language, lang) : null} />
                   <MetadataField label={t('book_meta_translator')} value={defaultEdition.translator_name} />
                   <MetadataField label={t('book_meta_originally_published')} value={bookData.original_publication_year} />
-                  <MetadataField label={t('book_meta_original_language')} value={bookData.original_language} />
+                  <MetadataField label={t('book_meta_original_language')} value={bookData.original_language ? getIso639Name(bookData.original_language, lang) : null} />
                   <MetadataField label={t('book_meta_this_edition')} value={defaultEdition.publication_date ? new Date(defaultEdition.publication_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : null} />
                   <MetadataField label={t('book_meta_isbn')} value={defaultEdition.isbn} />
                 </div>
@@ -238,7 +238,7 @@ const jsonLd: Record<string, unknown> = {
                 <select class="select select-sm w-24" disabled={availableLanguages.length <= 1}>
                   {availableLanguages.map((language: string) => (
                     <option value={language} selected={language === defaultEdition.language}>
-                      {language}
+                      {getIso639Name(language, lang)}
                     </option>
                   ))}
                 </select>
