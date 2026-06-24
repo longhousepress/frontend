@@ -3,7 +3,7 @@
 /* DaisyUI with tree-shaking via include parameter */
 @plugin "daisyui" {
   themes: autumn --default, sunset;
-  include: badge, button, card, checkbox, collapse, divider, fileinput, indicator, input, kbd, label, link, loading, menu, navbar, range, select, textarea, validator;
+  include: badge, button, card, checkbox, collapse, divider, dropdown, fileinput, indicator, input, kbd, label, link, loading, menu, navbar, range, select, textarea, validator;
   logs: false;
 }
 
@@ -97,6 +97,27 @@ a,
 button,
 .btn {
   cursor: pointer !important;
+}
+
+/* Mobile nav dropdown: full-width panel flush under the navbar */
+#mobile-menu {
+  position: fixed;
+  top: 3rem; /* matches navbar h-12 */
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-radius: 0;
+}
+
+#mobile-menu li > a {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+  font-size: 1rem;
+  justify-content: center;
+}
+
+#mobile-menu li:not(:last-child) > a {
+  border-bottom: 1px solid color-mix(in oklch, var(--color-base-content) 20%, transparent);
 }
 
 /* Instant view transitions */
