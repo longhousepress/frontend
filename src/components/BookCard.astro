@@ -37,6 +37,10 @@ const {
   sizeClasses = "w-full",
   original = false,
   ribbonLabel = "Longhouse original",
+  byText = "by",
+  coverOfText = "Cover of",
+  bookLabelText = "Book:",
+  viewDetailsText = "View details for",
 } = Astro.props;
 
 // Determine if img is an imported asset or a string path
@@ -48,19 +52,19 @@ const imageFormat = isImportedAsset ? 'webp' : undefined;
 <article
   class={`group card bg-base-100 ${sizeClasses} shadow-sm hover:shadow-md transition-shadow duration-150 relative rounded-lg border-2 border-base-300`}
   style="box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2), 0 10px 15px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);"
-  aria-label={`Book: ${title} by ${author}`}
+  aria-label={`${bookLabelText} ${title} ${byText} ${author}`}
 >
   <a
     href={href || undefined}
     data-astro-prefetch
     class={href ? "block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-lg" : "block rounded-lg pointer-events-none"}
-    aria-label={href ? `View details for ${title} by ${author}` : undefined}
+    aria-label={href ? `${viewDetailsText} ${title} ${byText} ${author}` : undefined}
   >
     <figure style="aspect-ratio: 6 / 9;" class="w-full overflow-hidden rounded-t-md relative">
       {isImportedAsset ? (
         <Image
           src={img}
-          alt={`Cover of ${title} by ${author}`}
+          alt={`${coverOfText} ${title} ${byText} ${author}`}
           widths={[200, 300, 400, 600]}
           sizes="(max-width: 640px) 144px, (max-width: 768px) 176px, (max-width: 1024px) 208px, 240px"
           format={imageFormat}
@@ -70,7 +74,7 @@ const imageFormat = isImportedAsset ? 'webp' : undefined;
       ) : (
         <img
           src={img}
-          alt={`Cover of ${title} by ${author}`}
+          alt={`${coverOfText} ${title} ${byText} ${author}`}
           class="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
           loading="lazy"
         />

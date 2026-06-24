@@ -1,11 +1,10 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { locales, defaultLocale, useTranslations, getLocalePath } from '../../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { locales, useTranslations } from '../../../lib/i18n';
 
 export function getStaticPaths() {
-  return locales
-    .filter(l => l !== defaultLocale)
-    .map(lang => ({ params: { lang } }));
+  return locales.map(lang => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
@@ -32,7 +31,7 @@ const reason = Astro.url.searchParams.get('reason') ?? 'Something went wrong. Pl
     </svg>
     <h1 class="text-2xl font-bold mb-3">{t('submissions_error_header')}</h1>
     <p class="text-lg opacity-70 mb-6">{reason}</p>
-    <a href={getLocalePath(lang, '/submissions')} data-astro-prefetch class="btn btn-primary">
+    <a href={getRelativeLocaleUrl(lang, '/submissions')} data-astro-prefetch class="btn btn-primary">
       {t('submissions_error_btn')}
     </a>
   </div>

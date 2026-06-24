@@ -1,19 +1,19 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import BookCard from '../../components/BookCard.astro';
-import { SELECTED_CURRENCY, BUILD_API_URL } from '../../lib/constants';
+import { BUILD_API_URL } from '../../lib/constants';
 import { getPriceForCurrency, formatPrice } from '../../lib/utils';
-import { locales, defaultLocale, useTranslations, getLocalePath } from '../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { locales, useTranslations, getLanguage, getCurrencyConfig } from '../../lib/i18n';
 import type { Book } from '../../types/book';
 
 export function getStaticPaths() {
-  return locales
-    .filter(l => l !== defaultLocale)
-    .map(lang => ({ params: { lang } }));
+  return locales.map(lang => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
 const t = useTranslations(lang);
+const currency = getCurrencyConfig(lang);
 
 const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../assets/*/cover/*');
 
@@ -28,14 +28,14 @@ async function getCoverImage(coverFilename: string, bookSlug: string) {
   return coverFilename;
 }
 
-const response = await fetch(`${BUILD_API_URL}/api/books`);
+const response = await fetch(`${BUILD_API_URL}/api/books?language=${getLanguage(lang)}`);
 const booksRaw: Book[] = await response.json();
 
 const booksWithPaths = (booksRaw || [])
   .flatMap((book: Book) => {
     return (book.editions || [])
       .map((edition: any) => {
-        const price = edition.prices ? getPriceForCurrency(edition.prices, SELECTED_CURRENCY) : null;
+        const price = edition.prices ? getPriceForCurrency(edition.prices, currency.code) : null;
         if (price === null) return null;
         return {
           id: edition.id,
@@ -45,7 +45,7 @@ const booksWithPaths = (booksRaw || [])
           coverPath: edition.cover,
           description: edition.short_description,
           book_slug: book.book_slug,
-          categories: edition.categories || book.categories || [],
+          categories: edition.categories || [],
           format: edition.format || 'eBook',
           language: edition.language || null,
           page_count: edition.page_count || null,
@@ -141,13 +141,13 @@ const allCategories = Array.from(
             </div>
           </div>
         </div>
-      </div>
 
       <label class="floating-label relative w-full sm:w-[calc((100%-2rem)/2)] md:w-[calc((100%-4rem)/3)] lg:w-[calc((100%-6rem)/4)] xl:w-[calc((100%-8rem)/5)]">
         <input type="text" id="search-input" placeholder={t('catalog_search_placeholder')} class="input input-sm pr-10 w-full" />
         <span>{t('catalog_search_label')}</span>
         <kbd id="search-kbd" class="kbd kbd-sm absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">/</kbd>
       </label>
+      </div>
     </div>
 
     <div class="max-w-7xl mx-auto">
@@ -164,13 +164,17 @@ const allCategories = Array.from(
             <BookCard
               title={edition.title}
               author={edition.author}
-              price={formatPrice(edition.price)}
+              price={formatPrice(edition.price, currency)}
               img={edition.cover}
-              href={getLocalePath(lang, `/books/${edition.book_slug}`)}
+              href={getRelativeLocaleUrl(lang, `/books/${edition.book_slug}`)}
               description={edition.description}
               categories={edition.categories}
               original={edition.original}
               ribbonLabel={t('book_original_ribbon')}
+              byText={t('book_by')}
+              coverOfText={t('book_cover_of')}
+              bookLabelText={t('book_card_label')}
+              viewDetailsText={t('book_card_view_details')}
             />
           </div>
         ))}

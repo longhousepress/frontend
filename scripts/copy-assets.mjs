@@ -25,15 +25,39 @@ if (!existsSync(sourceDir)) {
 const coversDest = join(root, 'src', 'assets');
 const samplesDest = join(root, 'public', 'samples');
 
-// Fetch the API to get all expected files
+// Fetch all editions across every locale so no cover or sample is missed.
+const LANGUAGES = ['eng', 'bul', 'kor'];
 let books;
 try {
   console.log('Fetching book data from API...');
-  const response = await fetch(`${BUILD_API_URL}/api/books`);
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  const responses = await Promise.all(
+    LANGUAGES.map(lang => fetch(`${BUILD_API_URL}/api/books?language=${lang}`))
+  );
+  for (const response of responses) {
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
   }
-  books = await response.json();
+  const results = await Promise.all(responses.map(r => r.json()));
+
+  // Merge books across locales; deduplicate editions by id.
+  const booksMap = new Map();
+  for (const langBooks of results) {
+    for (const book of langBooks) {
+      if (!booksMap.has(book.book_slug)) {
+        booksMap.set(book.book_slug, { ...book, editions: [] });
+      }
+      const seenEditions = booksMap.get(book.book_slug);
+      const seenIds = new Set(seenEditions.editions.map(e => e.id));
+      for (const edition of book.editions || []) {
+        if (!seenIds.has(edition.id)) {
+          seenEditions.editions.push(edition);
+          seenIds.add(edition.id);
+        }
+      }
+    }
+  }
+  books = Array.from(booksMap.values());
 } catch (error) {
   console.error(`Error: Failed to fetch books from API (${BUILD_API_URL}/api/books):`);
   console.error(`  ${error.message}`);

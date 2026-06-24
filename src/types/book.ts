@@ -4,6 +4,7 @@ export interface Price {
 }
 
 export interface Contributor {
+  role_id: number;
   name: string;
   slug: string;
   role: string;
@@ -15,6 +16,7 @@ export interface Contributor {
 export interface Edition {
   id: number;
   title: string;
+  subtitle: string | null;
   author_name: string;
   author_bio: string | null;
   // @deprecated Use prices array instead - this field is kept for backwards compatibility
@@ -49,22 +51,6 @@ export interface Sample {
 
 export interface Book {
   id: number;
-  title: string;
-  subtitle: string | null;
-  author: string;
-  book_slug: string;
-  original_language: string;
-  original_publication_year: number | null;
-  contributors: Contributor[];
-  categories?: string[];
-  editions: Edition[];
-}
-
-export interface BookListItem {
-  id: number;
-  title: string;
-  subtitle: string | null;
-  author: string;
   book_slug: string;
   original_language: string;
   original_publication_year: number | null;

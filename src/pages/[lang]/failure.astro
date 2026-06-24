@@ -1,12 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { SUPPORT_EMAIL } from '../../lib/constants';
-import { locales, defaultLocale, useTranslations, getLocalePath } from '../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { locales, useTranslations } from '../../lib/i18n';
 
 export function getStaticPaths() {
-  return locales
-    .filter(l => l !== defaultLocale)
-    .map(lang => ({ params: { lang } }));
+  return locales.map(lang => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
@@ -33,10 +32,10 @@ const t = useTranslations(lang);
       </p>
 
       <div class="flex gap-4 justify-center flex-wrap">
-        <a href={getLocalePath(lang, '/checkout')} data-astro-prefetch class="btn btn-primary">
+        <a href={getRelativeLocaleUrl(lang, '/checkout')} data-astro-prefetch class="btn btn-primary">
           {t('failure_try_again')}
         </a>
-        <a href={getLocalePath(lang, '/catalog')} data-astro-prefetch class="btn btn-outline">
+        <a href={getRelativeLocaleUrl(lang, '/catalog')} data-astro-prefetch class="btn btn-outline">
           {t('failure_continue')}
         </a>
       </div>

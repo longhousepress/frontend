@@ -1,82 +1,85 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import BookCard from '../../components/BookCard.astro';
-import { SELECTED_CURRENCY, BUILD_API_URL } from '../../lib/constants';
-import { getPriceForCurrency, formatPrice } from '../../lib/utils';
-import type { Book, Contributor } from '../../types/book';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import BookCard from '../../../components/BookCard.astro';
+import { BUILD_API_URL } from '../../../lib/constants';
+import { getPriceForCurrency, formatPrice } from '../../../lib/utils';
+import { locales, getLanguage, getCurrencyConfig } from '../../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import type { Book, Contributor } from '../../../types/book';
 
-// Import all cover images from the nested assets/<book-slug>/cover structure
-const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../assets/*/cover/*');
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../../assets/*/cover/*');
 
-// Helper function to get the optimized image for a cover filename
 async function getCoverImage(coverFilename: string, bookSlug: string) {
   if (!coverFilename) return coverFilename;
-
-  const exactPath = `../../assets/${bookSlug}/cover/${coverFilename}`;
+  const exactPath = `../../../assets/${bookSlug}/cover/${coverFilename}`;
   const imageModule = coverImages[exactPath];
-  
   if (imageModule) {
     const image = await imageModule();
     return image.default;
   }
-
   return coverFilename;
 }
 
-// Generate static paths for all unique authors at build time
 export async function getStaticPaths() {
-  const response = await fetch(`${BUILD_API_URL}/api/books`);
+  const AUTHOR_ROLE_ID = 1;
+
+  // Always fetch from the default (eng) storefront to enumerate unique author slugs.
+  const response = await fetch(`${BUILD_API_URL}/api/books?language=eng`);
   const booksRaw: Book[] = await response.json();
 
-  // Extract unique authors from contributors with role "Author"
   const authorsMap = new Map<string, Contributor>();
-  
   (booksRaw || []).forEach((book: Book) => {
     (book.contributors || []).forEach((contributor: Contributor) => {
-      if (contributor.role === 'Author' && contributor.slug) {
+      if (contributor.role_id === AUTHOR_ROLE_ID && contributor.slug) {
         authorsMap.set(contributor.slug, contributor);
       }
     });
   });
 
-  // Generate a path for each unique author
-  return Array.from(authorsMap.values()).map((author) => ({
-    params: { slug: author.slug },
-    props: { author }
-  }));
+  const authors = Array.from(authorsMap.values());
+  return locales.flatMap(lang =>
+    authors.map(author => ({
+      params: { lang, slug: author.slug },
+      props: { author },
+    }))
+  );
 }
 
+const { lang } = Astro.params;
 const { author } = Astro.props;
 const { slug } = Astro.params;
+const currency = getCurrencyConfig(lang);
 
-// Fetch all books and filter for this author
-const response = await fetch(`${BUILD_API_URL}/api/books`);
+const response = await fetch(`${BUILD_API_URL}/api/books?language=${getLanguage(lang)}`);
 const booksRaw: Book[] = await response.json();
 
-// Flatten editions and filter for this author only
+const AUTHOR_ROLE_ID = 1;
+
+const localizedAuthor = (booksRaw || [])
+  .flatMap(book => book.contributors)
+  .find(c => c.slug === slug && c.role_id === AUTHOR_ROLE_ID);
+const authorBio = localizedAuthor?.bio ?? author.bio;
+
 const booksWithPaths = (booksRaw || [])
   .flatMap((book: Book) => {
-    // Check if this book has the author as a contributor
-    const hasAuthor = book.contributors.some(c => c.slug === slug && c.role === 'Author');
+    const hasAuthor = book.contributors.some(
+      c => c.slug === slug && c.role_id === AUTHOR_ROLE_ID
+    );
     if (!hasAuthor) return [];
 
     return (book.editions || [])
       .map((edition: any) => {
-        const price = edition.prices ? getPriceForCurrency(edition.prices, SELECTED_CURRENCY) : null;
-
-        if (price === null) {
-          return null;
-        }
-
+        const price = edition.prices ? getPriceForCurrency(edition.prices, currency.code) : null;
+        if (price === null) return null;
         return {
           id: edition.id,
           title: edition.title,
           author: edition.author_name,
-          price: price,
+          price,
           coverPath: edition.cover,
           description: edition.description,
           book_slug: book.book_slug,
-          categories: edition.categories || book.categories || [],
+          categories: edition.categories || [],
           format: edition.format || 'eBook',
           language: edition.language || null,
           page_count: edition.page_count || null,
@@ -88,7 +91,6 @@ const booksWithPaths = (booksRaw || [])
       .filter((edition: any) => edition !== null);
   });
 
-// Load optimized cover images
 const books = await Promise.all(
   booksWithPaths.map(async (book: any) => ({
     ...book,
@@ -96,51 +98,38 @@ const books = await Promise.all(
   }))
 );
 
-// Extract all unique categories from this author's books
 const allCategories = Array.from(
-  new Set(
-    books.flatMap((book: any) => book.categories || [])
-  )
+  new Set(books.flatMap((book: any) => book.categories || []))
 ).sort() as string[];
 ---
 
 <BaseLayout title={`${author.name} - Author`}>
   <div class="py-6">
-    <!-- Centered Title -->
     <div class="max-w-7xl mx-auto mb-6 text-center">
       <h2 class="text-2xl font-semibold">{author.name}</h2>
-      {author.bio && (
-        <p class="text-sm opacity-70 mt-2 max-w-2xl mx-auto">{author.bio}</p>
+      {authorBio && (
+        <p class="text-sm opacity-70 mt-2 max-w-2xl mx-auto">{authorBio}</p>
       )}
       <p class="text-sm opacity-70 mt-1">{books.length} {books.length === 1 ? 'book' : 'books'}</p>
     </div>
 
-    <!-- Search with Filter -->
     <div class="max-w-7xl mx-auto mb-6">
-      <!-- Filter and Search Container -->
       <div class="flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4 sm:gap-0">
-        <!-- Filter Button & Expandable Panel Container -->
         <div class="relative w-full sm:w-auto">
           <div class="flex items-center sm:block">
-            <!-- Filter Button -->
             <button
               id="filter-toggle"
               class="btn btn-sm btn-square h-8 min-h-8 shrink-0 relative z-10"
               aria-label="Toggle filters"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
               </svg>
             </button>
           </div>
 
-          <!-- Expandable Filter Panel -->
-          <div
-            id="filter-panel"
-            class="filter-panel overflow-hidden transition-all duration-300 ease-in-out"
-          >
+          <div id="filter-panel" class="filter-panel overflow-hidden transition-all duration-300 ease-in-out">
             <div class="filter-panel-content bg-base-300 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
-            <!-- Genre Filter -->
             {allCategories.length > 0 && (
               <>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -159,62 +148,27 @@ const allCategories = Array.from(
                     ))}
                   </div>
                 </div>
-
                 <span class="hidden sm:inline text-xs opacity-30">|</span>
               </>
             )}
 
-            <!-- Price Filter -->
             <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span class="text-xs font-medium">Price</span>
               <div class="flex items-center gap-2">
-                <input
-                  type="number"
-                  id="min-price"
-                  class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  value="4"
-                  min="1"
-                  max="30"
-                  step="1"
-                />
+                <input type="number" id="min-price" class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value="4" min="1" max="30" step="1" />
                 <div class="dual-slider-container">
                   <div class="dual-slider-track"></div>
                   <div id="dual-slider-range" class="dual-slider-range"></div>
-                  <input
-                    type="range"
-                    id="min-price-slider"
-                    class="dual-slider"
-                    min="1"
-                    max="30"
-                    value="4"
-                    step="1"
-                  />
-                  <input
-                    type="range"
-                    id="max-price-slider"
-                    class="dual-slider"
-                    min="1"
-                    max="30"
-                    value="10"
-                    step="1"
-                  />
+                  <input type="range" id="min-price-slider" class="dual-slider" min="1" max="30" value="4" step="1" />
+                  <input type="range" id="max-price-slider" class="dual-slider" min="1" max="30" value="10" step="1" />
                 </div>
-                <input
-                  type="number"
-                  id="max-price"
-                  class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  value="10"
-                  min="1"
-                  max="30"
-                  step="1"
-                />
+                <input type="number" id="max-price" class="input input-xs w-16 h-6 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value="10" min="1" max="30" step="1" />
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Search Input with Keyboard Hint -->
       <label class="floating-label relative w-full sm:w-[calc((100%-2rem)/2)] md:w-[calc((100%-4rem)/3)] lg:w-[calc((100%-6rem)/4)] xl:w-[calc((100%-8rem)/5)]">
         <input type="text" id="search-input" placeholder="Search books..." class="input input-sm pr-10 w-full" />
         <span>Search</span>
@@ -223,9 +177,7 @@ const allCategories = Array.from(
     </div>
     </div>
 
-    <!-- Books Grid & No Results Message -->
     <div class="max-w-7xl mx-auto">
-      <!-- Server-rendered book cards -->
       <div id="books-grid" class="grid gap-8 justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {books.map((edition: any) => (
           <div
@@ -238,9 +190,9 @@ const allCategories = Array.from(
             <BookCard
               title={edition.title}
               author={edition.author}
-              price={formatPrice(edition.price)}
+              price={formatPrice(edition.price, currency)}
               img={edition.cover}
-              href={`/books/${edition.book_slug}`}
+              href={getRelativeLocaleUrl(lang, `books/${edition.book_slug}`)}
               description={edition.description}
               categories={edition.categories}
             />
@@ -248,7 +200,6 @@ const allCategories = Array.from(
         ))}
       </div>
 
-      <!-- No Results Message -->
       <div id="no-results" class="hidden text-center py-12">
         <p class="text-lg opacity-70">No books found matching your search.</p>
       </div>
@@ -257,7 +208,6 @@ const allCategories = Array.from(
 </BaseLayout>
 
 <style>
-  /* Mobile: expand downward and push content */
   .filter-panel {
     width: 100%;
     max-height: 0;
@@ -276,7 +226,6 @@ const allCategories = Array.from(
     border-radius: 0.5rem;
   }
 
-  /* Desktop: expand to the right and position absolutely */
   @media (min-width: 640px) {
     .filter-panel {
       position: absolute;
@@ -393,7 +342,6 @@ const allCategories = Array.from(
   }
 </style>
 
-<!-- Author page scripts -->
 <script>
   function setupSearchShortcuts() {
     const searchInput = document.getElementById('search-input') as HTMLInputElement;
@@ -414,7 +362,6 @@ const allCategories = Array.from(
         e.preventDefault();
         searchInput.focus();
       }
-
       if (e.key === 'Escape' && document.activeElement === searchInput) {
         searchInput.blur();
       }
@@ -430,15 +377,9 @@ const allCategories = Array.from(
 
     filterToggle.addEventListener('click', () => {
       isFilterOpen = !isFilterOpen;
-
-      if (isFilterOpen) {
-        filterPanel.classList.add('open');
-      } else {
-        filterPanel.classList.remove('open');
-      }
+      filterPanel.classList.toggle('open', isFilterOpen);
     });
 
-    // Close filter panel when clicking outside
     document.addEventListener('click', (e) => {
       if (isFilterOpen &&
           !filterPanel.contains(e.target as Node) &&
@@ -468,15 +409,11 @@ const allCategories = Array.from(
     const DEFAULT_MIN = 4;
     const DEFAULT_MAX = 10;
 
-    // Update the visual range fill
     function updateSliderRange() {
-      if (!minPriceSlider || !maxPriceSlider) return;
-      
       const min = parseInt(minPriceSlider.value);
       const max = parseInt(maxPriceSlider.value);
       const minPercent = ((min - 1) / 29) * 100;
       const maxPercent = ((max - 1) / 29) * 100;
-
       if (sliderRange) {
         sliderRange.style.left = `${minPercent}%`;
         sliderRange.style.width = `${maxPercent - minPercent}%`;
@@ -485,176 +422,88 @@ const allCategories = Array.from(
 
     function filterBooks() {
       const query = searchInput.value.toLowerCase().trim();
-
-      // Get selected genres
       const selectedGenres = Array.from(genreFilters)
-        .filter(checkbox => checkbox.checked)
-        .map(checkbox => checkbox.value);
-
-      // Get price range
+        .filter(cb => cb.checked)
+        .map(cb => cb.value);
       const minPrice = parseFloat(minPriceInput?.value || '0');
       const maxPrice = parseFloat(maxPriceInput?.value || '999');
 
       let visibleCount = 0;
-
       bookItems.forEach(item => {
-        const title = (item as HTMLElement).dataset.title || '';
-        const author = (item as HTMLElement).dataset.author || '';
-        const categoriesStr = (item as HTMLElement).dataset.categories || '[]';
-        const categories = JSON.parse(categoriesStr);
-
-        // Check if matches search query
-        const matchesSearch = !query || title.includes(query) || author.includes(query);
-
-        // Check if matches genre filter (if any selected)
-        const matchesGenre = selectedGenres.length === 0 ||
-          selectedGenres.some(genre => categories.includes(genre));
-
-        // Check if matches price range
-        const bookPrice = parseFloat((item as HTMLElement).dataset.price || '0');
+        const el = item as HTMLElement;
+        const categories = JSON.parse(el.dataset.categories || '[]');
+        const matchesSearch = !query || (el.dataset.title || '').includes(query) || (el.dataset.author || '').includes(query);
+        const matchesGenre = selectedGenres.length === 0 || selectedGenres.some(g => categories.includes(g));
+        const bookPrice = parseFloat(el.dataset.price || '0');
         const matchesPrice = bookPrice >= minPrice && bookPrice <= maxPrice;
-
         const matches = matchesSearch && matchesGenre && matchesPrice;
-
-        (item as HTMLElement).style.display = matches ? '' : 'none';
+        el.style.display = matches ? '' : 'none';
         if (matches) visibleCount++;
       });
 
-      if (visibleCount === 0) {
-        booksGrid?.classList.add('hidden');
-        noResults?.classList.remove('hidden');
-      } else {
-        booksGrid?.classList.remove('hidden');
-        noResults?.classList.add('hidden');
-      }
+      booksGrid?.classList.toggle('hidden', visibleCount === 0);
+      noResults?.classList.toggle('hidden', visibleCount > 0);
     }
 
-    // Clear input value on click
-    minPriceInput?.addEventListener('click', () => {
-      minPriceInput.select();
-    });
+    minPriceInput?.addEventListener('click', () => minPriceInput.select());
+    maxPriceInput?.addEventListener('click', () => maxPriceInput.select());
 
-    maxPriceInput?.addEventListener('click', () => {
-      maxPriceInput.select();
-    });
-
-    // Validate min price input
     minPriceInput?.addEventListener('blur', () => {
       const value = parseInt(minPriceInput.value);
       const maxValue = parseInt(maxPriceInput.value);
-
       if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value >= maxValue) {
         minPriceInput.value = String(DEFAULT_MIN);
-        if (minPriceSlider) {
-          minPriceSlider.value = String(DEFAULT_MIN);
-          updateSliderRange();
-          filterBooks();
-        }
+        if (minPriceSlider) { minPriceSlider.value = String(DEFAULT_MIN); updateSliderRange(); filterBooks(); }
       }
     });
 
-    // Validate max price input
     maxPriceInput?.addEventListener('blur', () => {
       const value = parseInt(maxPriceInput.value);
       const minValue = parseInt(minPriceInput.value);
-
       if (isNaN(value) || value < MIN_PRICE || value > MAX_PRICE || value <= minValue) {
         maxPriceInput.value = String(DEFAULT_MAX);
-        if (maxPriceSlider) {
-          maxPriceSlider.value = String(DEFAULT_MAX);
-          updateSliderRange();
-          filterBooks();
-        }
+        if (maxPriceSlider) { maxPriceSlider.value = String(DEFAULT_MAX); updateSliderRange(); filterBooks(); }
       }
     });
 
-    // Sync min slider with min price input
     minPriceSlider?.addEventListener('input', () => {
-      const minVal = parseInt(minPriceSlider.value);
-      const maxVal = parseInt(maxPriceSlider.value);
-
-      if (minVal >= maxVal) {
-        minPriceSlider.value = String(maxVal - 1);
-      }
-
-      if (minPriceInput) {
-        minPriceInput.value = minPriceSlider.value;
-        updateSliderRange();
-        filterBooks();
-      }
+      if (parseInt(minPriceSlider.value) >= parseInt(maxPriceSlider.value))
+        minPriceSlider.value = String(parseInt(maxPriceSlider.value) - 1);
+      if (minPriceInput) { minPriceInput.value = minPriceSlider.value; updateSliderRange(); filterBooks(); }
     });
 
-    // Sync max slider with max price input
     maxPriceSlider?.addEventListener('input', () => {
-      const minVal = parseInt(minPriceSlider.value);
-      const maxVal = parseInt(maxPriceSlider.value);
-
-      if (maxVal <= minVal) {
-        maxPriceSlider.value = String(minVal + 1);
-      }
-
-      if (maxPriceInput) {
-        maxPriceInput.value = maxPriceSlider.value;
-        updateSliderRange();
-        filterBooks();
-      }
+      if (parseInt(maxPriceSlider.value) <= parseInt(minPriceSlider.value))
+        maxPriceSlider.value = String(parseInt(minPriceSlider.value) + 1);
+      if (maxPriceInput) { maxPriceInput.value = maxPriceSlider.value; updateSliderRange(); filterBooks(); }
     });
 
-    // Sync min price input with slider (on Enter key)
-    minPriceInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        minPriceInput.blur();
-      }
-    });
-
+    minPriceInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') minPriceInput.blur(); });
     minPriceInput?.addEventListener('change', () => {
       const minVal = parseInt(minPriceInput.value);
       const maxVal = parseInt(maxPriceInput.value);
-
       if (!isNaN(minVal) && minVal >= MIN_PRICE && minVal < maxVal && minVal <= MAX_PRICE) {
-        if (minPriceSlider) {
-          minPriceSlider.value = minPriceInput.value;
-          updateSliderRange();
-          filterBooks();
-        }
+        if (minPriceSlider) { minPriceSlider.value = minPriceInput.value; updateSliderRange(); filterBooks(); }
       }
     });
 
-    // Sync max price input with slider (on Enter key)
-    maxPriceInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        maxPriceInput.blur();
-      }
-    });
-
+    maxPriceInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') maxPriceInput.blur(); });
     maxPriceInput?.addEventListener('change', () => {
       const minVal = parseInt(minPriceInput.value);
       const maxVal = parseInt(maxPriceInput.value);
-
       if (!isNaN(maxVal) && maxVal > minVal && maxVal <= MAX_PRICE && maxVal >= MIN_PRICE) {
-        if (maxPriceSlider) {
-          maxPriceSlider.value = maxPriceInput.value;
-          updateSliderRange();
-          filterBooks();
-        }
+        if (maxPriceSlider) { maxPriceSlider.value = maxPriceInput.value; updateSliderRange(); filterBooks(); }
       }
     });
 
-    // Initialize slider range on page load
     updateSliderRange();
-
     searchInput?.addEventListener('input', filterBooks);
-    genreFilters.forEach(checkbox => {
-      checkbox.addEventListener('change', filterBooks);
-    });
+    genreFilters.forEach(cb => cb.addEventListener('change', filterBooks));
   }
 
-  function initializeAuthorPage() {
+  document.addEventListener('astro:page-load', () => {
     setupSearchShortcuts();
     setupFilterToggle();
     setupFiltering();
-  }
-
-  // Run on initial load and after view transitions
-  document.addEventListener('astro:page-load', initializeAuthorPage);
+  });
 </script>

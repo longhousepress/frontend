@@ -1,11 +1,10 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { locales, defaultLocale, useTranslations, getLocalePath } from '../../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { locales, useTranslations } from '../../../lib/i18n';
 
 export function getStaticPaths() {
-  return locales
-    .filter(l => l !== defaultLocale)
-    .map(lang => ({ params: { lang } }));
+  return locales.map(lang => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
@@ -30,7 +29,7 @@ const t = useTranslations(lang);
     </svg>
     <h1 class="text-2xl font-bold mb-3">{t('submissions_success_header')}</h1>
     <p class="text-lg opacity-70 mb-6">{t('submissions_success_body')}</p>
-    <a href={getLocalePath(lang, '/catalog')} data-astro-prefetch class="btn btn-primary">
+    <a href={getRelativeLocaleUrl(lang, '/catalog')} data-astro-prefetch class="btn btn-primary">
       {t('submissions_success_btn')}
     </a>
   </div>

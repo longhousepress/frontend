@@ -4,9 +4,10 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import MetadataField from '../../../components/book/MetadataField.astro';
 import ChevronIcon from '../../../components/icons/ChevronIcon.astro';
 import type { Book, Edition } from '../../../types/book';
-import { SELECTED_CURRENCY, DOMAIN, BUSINESS_NAME, PUBLISHER_LOGO_URL, BUILD_API_URL } from '../../../lib/constants';
+import { DOMAIN, BUSINESS_NAME, PUBLISHER_LOGO_URL, BUILD_API_URL } from '../../../lib/constants';
 import { formatPrice, getUniqueValues, extractSamplePaths, getPriceForCurrency, selectDefaultEdition } from '../../../lib/utils';
-import { locales, defaultLocale, useTranslations, getLocalePath } from '../../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { locales, useTranslations, getLanguage, getCurrencyConfig } from '../../../lib/i18n';
 
 export async function getStaticPaths() {
   const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../../assets/*/cover/*');
@@ -22,14 +23,18 @@ export async function getStaticPaths() {
     return null;
   }
 
-  const response = await fetch(`${BUILD_API_URL}/api/books`);
-  const books: Book[] = await response.json();
-  const nonDefaultLocales = locales.filter(l => l !== defaultLocale);
+  const booksByLocale = await Promise.all(
+    locales.map(async (lang) => {
+      const response = await fetch(`${BUILD_API_URL}/api/books?language=${getLanguage(lang)}`);
+      const books: Book[] = await response.json();
+      return { lang, books };
+    })
+  );
 
   return await Promise.all(
-    nonDefaultLocales.flatMap(lang =>
+    booksByLocale.flatMap(({ lang, books }) =>
       books.map(async (book) => {
-        const defaultEdition = selectDefaultEdition(book.editions, SELECTED_CURRENCY);
+        const defaultEdition = selectDefaultEdition(book.editions, getCurrencyConfig(lang).code);
         const optimizedCover = await getCoverImage(defaultEdition.cover, book.book_slug);
         return {
           params: { lang, slug: book.book_slug },
@@ -47,15 +52,19 @@ interface Props {
 
 const { lang } = Astro.params;
 const t = useTranslations(lang);
+const currency = getCurrencyConfig(lang);
 const { bookData, optimizedCover } = Astro.props;
 
 const editionsWithPricing = bookData.editions.filter(edition =>
-  getPriceForCurrency(edition.prices, SELECTED_CURRENCY) !== null
+  getPriceForCurrency(edition.prices, currency.code) !== null
 );
 
-const defaultEdition: Edition = selectDefaultEdition(bookData.editions, SELECTED_CURRENCY);
+const defaultEdition: Edition = selectDefaultEdition(bookData.editions, currency.code);
+const AUTHOR_ROLE_ID = 1;
+const authorBio = bookData.contributors.find(c => c.role_id === AUTHOR_ROLE_ID)?.bio
+  ?? defaultEdition.author_bio;
 const samplePages = extractSamplePaths(defaultEdition.samples);
-const gbpPrice = getPriceForCurrency(defaultEdition.prices, SELECTED_CURRENCY);
+const price = getPriceForCurrency(defaultEdition.prices, currency.code);
 const availableFormats = getUniqueValues(editionsWithPricing.map(e => e.format).filter(Boolean));
 const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.language).filter(Boolean));
 const coverFormat = optimizedCover ? 'webp' : undefined;
@@ -85,11 +94,11 @@ const jsonLd: Record<string, unknown> = {
   ...(defaultEdition.isbn && { isbn: defaultEdition.isbn }),
   ...(defaultEdition.publication_date && { datePublished: defaultEdition.publication_date }),
   ...(defaultEdition.page_count && { numberOfPages: defaultEdition.page_count }),
-  ...(gbpPrice !== null && {
+  ...(price !== null && {
     offers: {
       '@type': 'Offer',
-      price: gbpPrice,
-      priceCurrency: SELECTED_CURRENCY,
+      price: price,
+      priceCurrency: currency.code,
       availability: 'https://schema.org/InStock',
       url: ogUrl,
     },
@@ -115,7 +124,7 @@ const jsonLd: Record<string, unknown> = {
           {optimizedCover ? (
             <Image
               src={optimizedCover}
-              alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+              alt={`${t('book_cover_of')} ${defaultEdition.title} ${t('book_by')} ${defaultEdition.author_name}`}
               widths={[320, 640]}
               sizes="320px"
               format={coverFormat}
@@ -125,7 +134,7 @@ const jsonLd: Record<string, unknown> = {
           ) : (
             <img
               src={defaultEdition.cover}
-              alt={`Cover of ${defaultEdition.title} by ${defaultEdition.author_name}`}
+              alt={`${t('book_cover_of')} ${defaultEdition.title} ${t('book_by')} ${defaultEdition.author_name}`}
               class="rounded-lg shadow-2xl"
               style="width: 320px; max-width: 100%; aspect-ratio: 6 / 9; object-fit: contain;"
             />
@@ -162,7 +171,7 @@ const jsonLd: Record<string, unknown> = {
                     label={t('book_meta_cover')}
                     value={[
                       defaultEdition.cover_name,
-                      defaultEdition.cover_artist ? `by ${defaultEdition.cover_artist}` : null
+                      defaultEdition.cover_artist ? `${t('book_by')} ${defaultEdition.cover_artist}` : null
                     ].filter(Boolean).join(' ')}
                   />
                   <MetadataField label={t('book_meta_pages')} value={defaultEdition.page_count} />
@@ -178,22 +187,22 @@ const jsonLd: Record<string, unknown> = {
             </div>
           </div>
 
-          {defaultEdition.author_bio ? (
+          {authorBio ? (
             <div class="author-section mb-6">
               <div class="flex items-center gap-2 cursor-pointer" id="author-toggle">
-                <p class="opacity-70">by {defaultEdition.author_name}</p>
+                <p class="opacity-70">{t('book_by')} {defaultEdition.author_name}</p>
                 <span class="author-arrow opacity-50 hover:opacity-100 transition-all duration-200">▼</span>
               </div>
 
               <div class="author-content hidden">
                 <div class="mt-4 pb-0">
-                  <p class="text-sm leading-relaxed opacity-80">{defaultEdition.author_bio}</p>
+                  <p class="text-sm leading-relaxed opacity-80">{authorBio}</p>
                   <div class="divider my-0"></div>
                 </div>
               </div>
             </div>
           ) : (
-            <p class="opacity-70 mb-6">by {defaultEdition.author_name}</p>
+            <p class="opacity-70 mb-6">{t('book_by')} {defaultEdition.author_name}</p>
           )}
         </div>
 
@@ -238,7 +247,7 @@ const jsonLd: Record<string, unknown> = {
 
             <div class="flex items-center justify-end">
               <div class="text-2xl leading-8 font-bold text-primary">
-                {gbpPrice !== null ? formatPrice(gbpPrice) : t('book_price_unavailable')}
+                {price !== null ? formatPrice(price, currency) : t('book_price_unavailable')}
               </div>
             </div>
           </div>
@@ -248,30 +257,30 @@ const jsonLd: Record<string, unknown> = {
               id="add-to-cart-btn"
               data-book-id={defaultEdition.id}
               data-book-title={defaultEdition.title}
-              data-book-price={gbpPrice}
+              data-book-price={price}
               data-book-cover={defaultEdition.cover}
               data-book-slug={bookData.book_slug}
               data-book-format={defaultEdition.format || 'eBook'}
               data-book-language={defaultEdition.language || ''}
               data-success-text={t('book_successfully_added')}
               class="btn btn-outline btn-lg grow"
-              disabled={gbpPrice === null}
+              disabled={price === null}
             >
-              {gbpPrice !== null ? t('book_add_to_cart') : t('book_not_available')}
+              {price !== null ? t('book_add_to_cart') : t('book_not_available')}
             </button>
             <div class="divider lg:divider-horizontal"></div>
             <button
               id="checkout-btn"
               data-book-id={defaultEdition.id}
               data-book-title={defaultEdition.title}
-              data-book-price={gbpPrice}
+              data-book-price={price}
               data-book-cover={defaultEdition.cover}
               data-book-slug={bookData.book_slug}
               data-book-format={defaultEdition.format || 'eBook'}
               data-book-language={defaultEdition.language || ''}
-              data-checkout-path={getLocalePath(lang, '/checkout')}
+              data-checkout-path={getRelativeLocaleUrl(lang, '/checkout')}
               class="btn btn-primary btn-lg grow"
-              disabled={gbpPrice === null}
+              disabled={price === null}
             >
               {t('book_buy_now')}
             </button>

@@ -3,14 +3,16 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from "@tailwindcss/vite";
 import sitemap from '@astrojs/sitemap';
 
+const BUILD_API_URL = process.env.BUILD_API_URL || 'http://localhost:2223';
+
 // https://astro.build/config
 export default defineConfig({
   site: process.env.SITE_URL || 'https://longhousepress.org',
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'bg', 'kr'],
+    locales: ['en', 'bg', 'ko'],
     routing: {
-      prefixDefaultLocale: false,
+      prefixDefaultLocale: true,
     },
   },
   outDir: process.env.OUT_DIR || './dist',
@@ -23,5 +25,10 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      proxy: {
+        '/api': { target: BUILD_API_URL, changeOrigin: false },
+      },
+    },
   },
 });

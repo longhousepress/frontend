@@ -2,12 +2,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getImage } from 'astro:assets';
 import { API_URL, SUPPORT_EMAIL } from '../../lib/constants';
-import { locales, defaultLocale, useTranslations } from '../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { locales, useTranslations } from '../../lib/i18n';
 
 export function getStaticPaths() {
-  return locales
-    .filter(l => l !== defaultLocale)
-    .map(lang => ({ params: { lang } }));
+  return locales.map(lang => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
@@ -73,14 +72,14 @@ for (const [path, importFn] of Object.entries(coverImages)) {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
               </button>
-              <div class="item-additional-downloads flex flex-col gap-2"></div>
+              <div class="item-additional-downloads hidden flex flex-col gap-2"></div>
             </div>
           </li>
         </template>
 
         <div id="error-message" class="hidden text-center py-12">
           <p id="error-text" class="text-lg opacity-70"></p>
-          <a href="/" data-astro-prefetch class="btn btn-primary mt-4">Return Home</a>
+          <a href={getRelativeLocaleUrl(lang, '/')} data-astro-prefetch class="btn btn-primary mt-4">Return Home</a>
         </div>
       </div>
 

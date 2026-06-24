@@ -1,16 +1,10 @@
-import { CURRENCY_SYMBOL, PRICE_DIVISOR } from './constants';
+import type { CurrencyConfig } from './i18n';
 import type { Edition, Price } from '../types/book';
 
-/**
- * Formats a price from cents to a currency string with symbol
- * @param priceInCents - Price value in cents (e.g., 500 for £5.00)
- * @returns Formatted price string (e.g., "£5.00")
- * @example
- * formatPrice(500) // "£5.00"
- * formatPrice(1234) // "£12.34"
- */
-export function formatPrice(priceInCents: number): string {
-  return `${CURRENCY_SYMBOL}${(priceInCents / PRICE_DIVISOR).toFixed(2)}`;
+export function formatPrice(priceInCents: number, currency: CurrencyConfig): string {
+  const amount = priceInCents / currency.divisor;
+  const formatted = currency.divisor === 1 ? amount.toFixed(0) : amount.toFixed(2);
+  return `${currency.symbol}${formatted}`;
 }
 
 /**

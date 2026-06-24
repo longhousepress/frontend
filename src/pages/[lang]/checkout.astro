@@ -1,14 +1,13 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { SELECTED_CURRENCY, API_URL } from '../../lib/constants';
+import { API_URL } from '../../lib/constants';
 import { formatPrice } from '../../lib/utils';
 import { getImage } from 'astro:assets';
-import { locales, defaultLocale, useTranslations, getLocalePath } from '../../lib/i18n';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { locales, useTranslations, getCurrencyConfig, getLanguage } from '../../lib/i18n';
 
 export function getStaticPaths() {
-  return locales
-    .filter(l => l !== defaultLocale)
-    .map(lang => ({ params: { lang } }));
+  return locales.map(lang => ({ params: { lang } }));
 }
 
 const { lang } = Astro.params;
@@ -28,12 +27,12 @@ for (const [path, importFn] of Object.entries(coverImages)) {
   }
 }
 
-const CURRENCY = SELECTED_CURRENCY.toLowerCase();
-const localePrefix = getLocalePath(lang, '');
+const currency = getCurrencyConfig(lang);
+const localePrefix = getRelativeLocaleUrl(lang, '/').replace(/\/$/, '');
 ---
 
 <BaseLayout title={t('checkout_title')}>
-  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL} data-currency={CURRENCY} data-cover-map={JSON.stringify(coverUrlMap)} data-locale-prefix={localePrefix}>
+  <div class="max-w-2xl mx-auto py-6" data-api-url={API_URL} data-currency={currency.code.toLowerCase()} data-currency-symbol={currency.symbol} data-currency-divisor={String(currency.divisor)} data-cover-map={JSON.stringify(coverUrlMap)} data-locale-prefix={localePrefix} data-language={getLanguage(lang)}>
     <div class="flex h-full flex-col bg-base-100">
       <div class="flex-1 px-4 py-6 sm:px-6">
         <h1 id="cart-header" class="text-2xl font-bold text-base-content mb-8">{t('checkout_header')}</h1>
@@ -88,7 +87,7 @@ const localePrefix = getLocalePath(lang, '');
 
         <div id="empty-cart" class="hidden text-center py-12">
           <p class="text-lg opacity-70 mb-4">{t('checkout_empty')}</p>
-          <a href={getLocalePath(lang, '/catalog')} data-astro-prefetch class="inline-block text-primary hover:text-primary-focus font-medium py-3 px-4">{t('checkout_browse')}</a>
+          <a href={getRelativeLocaleUrl(lang, '/catalog')} data-astro-prefetch class="inline-block text-primary hover:text-primary-focus font-medium py-3 px-4">{t('checkout_browse')}</a>
         </div>
       </div>
 
@@ -112,7 +111,7 @@ const localePrefix = getLocalePath(lang, '');
 
         <p class="mt-6 text-center text-sm opacity-70">
           {t('checkout_or')}
-          <a href={getLocalePath(lang, '/catalog')} data-astro-prefetch class="font-medium text-primary hover:text-primary-focus ml-1">
+          <a href={getRelativeLocaleUrl(lang, '/catalog')} data-astro-prefetch class="font-medium text-primary hover:text-primary-focus ml-1">
             {t('checkout_continue')}
           </a>
         </p>
@@ -123,8 +122,16 @@ const localePrefix = getLocalePath(lang, '');
   <script>
     import { Cart } from '../../lib/cart';
     import { formatPrice } from '../../lib/utils';
+    import type { CurrencyConfig } from '../../lib/i18n';
 
     function setupCheckoutPage() {
+      const rootEl = document.querySelector<HTMLElement>('[data-currency]')!;
+      const currency: CurrencyConfig = {
+        code: (rootEl.dataset.currency || 'gbp').toUpperCase(),
+        symbol: rootEl.dataset.currencySymbol || '£',
+        divisor: Number(rootEl.dataset.currencyDivisor) || 100,
+      };
+
       const elements = {
         loading: document.getElementById('cart-loading')!,
         header: document.getElementById('cart-header')!,
@@ -174,7 +181,7 @@ const localePrefix = getLocalePath(lang, '');
         link.href = `${localePrefix}/books/${item.slug}`;
         (li.querySelector('.item-title') as HTMLElement).textContent = item.title;
 
-        const priceText = item.quantity > 1 ? `${item.quantity}× ${formatPrice(item.price)}` : formatPrice(item.price);
+        const priceText = item.quantity > 1 ? `${item.quantity}× ${formatPrice(item.price, currency)}` : formatPrice(item.price, currency);
         (li.querySelector('.item-price') as HTMLElement).textContent = priceText;
 
         (li.querySelector('.item-format') as HTMLElement).textContent = item.format || 'eBook';
@@ -206,7 +213,7 @@ const localePrefix = getLocalePath(lang, '');
           elements.items.appendChild(createCartItemElement(item));
         });
 
-        elements.subtotal.textContent = formatPrice(Cart.getTotal());
+        elements.subtotal.textContent = formatPrice(Cart.getTotal(), currency);
       }
 
       elements.items.addEventListener('click', (e) => {
@@ -267,10 +274,11 @@ const localePrefix = getLocalePath(lang, '');
           const rootEl = document.querySelector<HTMLElement>('[data-api-url]')!;
           const apiUrl = rootEl?.dataset.apiUrl || '';
           const currency = (rootEl?.dataset.currency || 'gbp').toUpperCase();
+          const language = rootEl?.dataset.language || '';
           const res = await fetch(`${apiUrl}/api/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items, email, currency })
+            body: JSON.stringify({ items, email, currency, language })
           });
           if (res.status === 404) {
             alert('The page you requested was not available on the server.');
