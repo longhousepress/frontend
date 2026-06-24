@@ -138,6 +138,7 @@ export const translations = {
   book_card_view_details: { en: 'View details for',   bg: 'Вижте детайли за', ko: '' },
   book_format_label:      { en: 'Format',             bg: 'Формат', ko: '' },
   book_language_label:    { en: 'Language',           bg: 'Език', ko: '' },
+  book_language_mismatch_tooltip: { en: 'The content of this book is in {edition_lang}, not {catalog_lang} (the language of this catalog)', bg: 'Съдържанието на книгата е на различен език ({edition_lang}) от езика на каталога, който разглеждате ({catalog_lang})', ko: '' },
   book_price_unavailable: { en: 'Price not available', bg: 'Липсваща цена', ko: '' },
   book_add_to_cart:       { en: 'Add to cart',        bg: 'Добави', ko: '' },
   book_not_available:     { en: 'Not available', bg: 'Не е налично', ko: '' },

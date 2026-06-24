@@ -67,6 +67,14 @@ const samplePages = extractSamplePaths(defaultEdition.samples);
 const price = getPriceForCurrency(defaultEdition.prices, currency.code);
 const availableFormats = getUniqueValues(editionsWithPricing.map(e => e.format).filter(Boolean));
 const availableLanguages = getUniqueValues(editionsWithPricing.map(e => e.language).filter(Boolean));
+
+const catalogLanguage = getLanguage(lang);
+const showMismatchWarning = !!defaultEdition.language && defaultEdition.language !== catalogLanguage;
+const mismatchTooltip = showMismatchWarning
+  ? t('book_language_mismatch_tooltip')
+      .replace('{edition_lang}', getIso639Name(defaultEdition.language, lang))
+      .replace('{catalog_lang}', getIso639Name(catalogLanguage, lang))
+  : '';
 const coverFormat = optimizedCover ? 'webp' : undefined;
 
 const ogTitle = `${defaultEdition.title} — ${defaultEdition.author_name}`;
@@ -235,13 +243,18 @@ const jsonLd: Record<string, unknown> = {
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-xs opacity-70">{t('book_language_label')}</label>
-                <select class="select select-sm w-24" disabled={availableLanguages.length <= 1}>
-                  {availableLanguages.map((language: string) => (
-                    <option value={language} selected={language === defaultEdition.language}>
-                      {getIso639Name(language, lang)}
-                    </option>
-                  ))}
-                </select>
+                <div class="flex items-center gap-2">
+                  <select class="select select-sm w-24" disabled={availableLanguages.length <= 1}>
+                    {availableLanguages.map((language: string) => (
+                      <option value={language} selected={language === defaultEdition.language}>
+                        {getIso639Name(language, lang)}
+                      </option>
+                    ))}
+                  </select>
+                  {showMismatchWarning && (
+                    <span class="cursor-help opacity-70" title={mismatchTooltip}>⚠️</span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -251,6 +264,10 @@ const jsonLd: Record<string, unknown> = {
               </div>
             </div>
           </div>
+
+          {showMismatchWarning && (
+            <p class="sm:hidden text-xs opacity-60 -mt-4 mb-4">⚠️ {mismatchTooltip}</p>
+          )}
 
           <div class="flex w-full flex-col lg:flex-row">
             <button
