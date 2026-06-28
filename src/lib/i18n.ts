@@ -96,6 +96,7 @@ export const translations = {
   catalog_search_placeholder: { en: 'Search books...', bg: 'Търси книги...', ko: '' },
   catalog_search_label:   { en: 'Search',             bg: 'Търси', ko: '' },
   catalog_no_results:     { en: 'No books found matching your search.', bg: 'Не бяха намерени книги.', ko: '' },
+  catalog_foreign_books_divider: { en: 'Foreign Language Books', bg: 'Чуждоезични издания', ko: '' },
   // checkout
   checkout_title:         { en: 'Shopping Cart',      bg: 'Кошница', ko: '' },
   checkout_header:        { en: 'Shopping cart',      bg: 'Кошница', ko: '' },
