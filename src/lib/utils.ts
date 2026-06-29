@@ -45,6 +45,16 @@ export function getPriceForCurrency(prices: Price[], currency: string): number |
   return priceObj ? priceObj.amount : null;
 }
 
+export function sortEditions<T extends { original: boolean; publication_date: string | null }>(editions: T[]): T[] {
+  return [...editions].sort((a, b) => {
+    if (a.original !== b.original) return a.original ? -1 : 1;
+    if (a.publication_date && b.publication_date) return b.publication_date.localeCompare(a.publication_date);
+    if (a.publication_date) return -1;
+    if (b.publication_date) return 1;
+    return 0;
+  });
+}
+
 export function selectDefaultEdition(editions: Edition[], currency: string): Edition {
   const withPricing = editions.filter(e => getPriceForCurrency(e.prices, currency) !== null);
   return withPricing.length > 0 ? withPricing[0] : editions[0];

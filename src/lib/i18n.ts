@@ -197,6 +197,10 @@ export const translations = {
   submissions_form_file:  { en: 'File upload',        bg: 'Файл', ko: '' },
   submissions_form_file_hint: { en: 'Accepted formats: PDF, DOC, DOCX, TXT, MD', bg: 'Приемаме следните файлови формати: PDF, DOC, DOCX, TXT, MD', ko: '' },
   submissions_form_submit:{ en: 'Submit',             bg: 'Изпрати', ko: '' },
+  // author page
+  author_book_singular:   { en: 'book',              bg: 'книга', ko: '' },
+  author_book_plural:     { en: 'books',             bg: 'книги', ko: '' },
+
   // submissions result pages
   submissions_success_title:  { en: 'Submission Received', bg: 'Заявката ви е получена', ko: '' },
   submissions_success_header: { en: 'Thank you for your submission!', bg: 'Благодарим ви за връзката', ko: '' },
