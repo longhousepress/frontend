@@ -189,6 +189,19 @@ const jsonLd: Record<string, unknown> = {
                   <MetadataField label={t('book_meta_original_language')} value={bookData.original_language ? getIso639Name(bookData.original_language, lang) : null} />
                   <MetadataField label={t('book_meta_this_edition')} value={defaultEdition.publication_date ? new Date(defaultEdition.publication_date).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) : null} />
                   <MetadataField label={t('book_meta_isbn')} value={defaultEdition.isbn} />
+                  {bookData.collection && (
+                    <div class="flex justify-between">
+                      <span class="opacity-70">{t('book_meta_collection')}:</span>
+                      <a
+                        href={getRelativeLocaleUrl(lang, `collections/${bookData.collection.slug}`)}
+                        class="font-medium link"
+                      >
+                        {t('book_collection_part')
+                          .replace('{ordinal}', String(bookData.collection.ordinal))
+                          .replace('{title}', bookData.collection.title)}
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <div class="divider my-4"></div>
               </div>
@@ -438,7 +451,8 @@ const jsonLd: Record<string, unknown> = {
       display: block;
       object-fit: contain;
     }
-  </style>
+
+</style>
 
   <script>
     import { Cart } from '../../../lib/cart';

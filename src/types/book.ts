@@ -49,11 +49,18 @@ export interface Sample {
   path: string;
 }
 
+export interface CollectionMembership {
+  slug: string;
+  title: string;
+  ordinal: number;
+}
+
 export interface Book {
   id: number;
   book_slug: string;
   original_language: string;
   original_publication_year: number | null;
   contributors: Contributor[];
+  collection: CollectionMembership | null;
   editions: Edition[];
 }

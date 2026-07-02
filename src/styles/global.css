@@ -120,6 +120,16 @@ button,
   border-bottom: 1px solid color-mix(in oklch, var(--color-base-content) 20%, transparent);
 }
 
+/* Links inside set:html book descriptions */
+#description-text a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+#description-text a:hover {
+  opacity: 0.75;
+}
+
 /* Instant view transitions */
 ::view-transition-old(root),
 ::view-transition-new(root) {

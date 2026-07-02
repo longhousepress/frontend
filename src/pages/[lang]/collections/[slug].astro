@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CatalogGrid from '../../../components/CatalogGrid.astro';
+import { BUILD_API_URL } from '../../../lib/constants';
+import { getPriceForCurrency } from '../../../lib/utils';
+import { locales, useTranslations, getLanguage, getCurrencyConfig } from '../../../lib/i18n';
+import type { Book, CollectionMembership } from '../../../types/book';
+
+const coverImages = import.meta.glob<{ default: ImageMetadata }>('../../../assets/*/cover/*');
+
+async function getCoverImage(coverFilename: string, bookSlug: string) {
+  if (!coverFilename) return coverFilename;
+  const exactPath = `../../../assets/${bookSlug}/cover/${coverFilename}`;
+  const imageModule = coverImages[exactPath];
+  if (imageModule) {
+    const image = await imageModule();
+    return image.default;
+  }
+  return coverFilename;
+}
+
+export async function getStaticPaths() {
+  return (await Promise.all(locales.map(async lang => {
+    const language = getLanguage(lang);
+    const response = await fetch(`${BUILD_API_URL}/api/books?language=${language}`);
+    const booksRaw: Book[] = await response.json();
+
+    const collectionsMap = new Map<string, CollectionMembership>();
+    (booksRaw || []).forEach((book: Book) => {
+      if (book.collection) {
+        collectionsMap.set(book.collection.slug, book.collection);
+      }
+    });
+
+    return Array.from(collectionsMap.values()).map(collection => ({
+      params: { lang, slug: collection.slug },
+      props: { collection },
+    }));
+  }))).flat();
+}
+
+const { lang, slug } = Astro.params;
+const { collection } = Astro.props;
+const t = useTranslations(lang);
+const currency = getCurrencyConfig(lang);
+
+const response = await fetch(`${BUILD_API_URL}/api/books?language=${getLanguage(lang)}`);
+const booksRaw: Book[] = await response.json();
+
+const booksWithPaths = (booksRaw || [])
+  .flatMap((book: Book) => {
+    if (book.collection?.slug !== slug) return [];
+
+    return (book.editions || [])
+      .map((edition: any) => {
+        const price = edition.prices ? getPriceForCurrency(edition.prices, currency.code) : null;
+        if (price === null) return null;
+        return {
+          id: edition.id,
+          title: edition.title,
+          author: edition.author_name,
+          price,
+          coverPath: edition.cover,
+          description: edition.short_description,
+          book_slug: book.book_slug,
+          categories: edition.categories || [],
+          format: edition.format || 'eBook',
+          language: edition.language || null,
+          page_count: edition.page_count || null,
+          translator: edition.translator_name || null,
+          publication_date: edition.publication_date || null,
+          isbn: edition.isbn || null,
+          original: edition.original || false,
+          ordinal: book.collection!.ordinal,
+        };
+      })
+      .filter((edition: any) => edition !== null);
+  });
+
+const booksWithCovers = await Promise.all(
+  booksWithPaths.map(async (book: any) => ({
+    ...book,
+    cover: await getCoverImage(book.coverPath, book.book_slug),
+  }))
+);
+
+// Collections are ordered: sort by each book's ordinal, not by edition recency.
+const byOrdinal = (a: any, b: any) => a.ordinal - b.ordinal || a.id - b.id;
+const storefrontLanguage = getLanguage(lang);
+const localBooks = booksWithCovers.filter((b: any) => b.language === storefrontLanguage).sort(byOrdinal);
+const foreignBooks = booksWithCovers.filter((b: any) => b.language !== storefrontLanguage).sort(byOrdinal);
+
+const allCategories = Array.from(
+  new Set([...localBooks, ...foreignBooks].flatMap((b: any) => b.categories || []))
+).sort() as string[];
+---
+
+<BaseLayout title={collection.title}>
+  <CatalogGrid {lang} {localBooks} {foreignBooks} {allCategories}>
+    <div slot="header" class="max-w-7xl mx-auto mb-6 text-center">
+      <h2 class="text-2xl font-semibold">{collection.title}</h2>
+      <p class="text-sm opacity-70 mt-1">
+        {localBooks.length + foreignBooks.length} {localBooks.length + foreignBooks.length === 1 ? t('author_book_singular') : t('author_book_plural')}
+      </p>
+    </div>
+  </CatalogGrid>
+</BaseLayout>

@@ -162,6 +162,8 @@ export const translations = {
   book_meta_original_language:    { en: 'Original Language',    bg: 'Език на оригинала', ko: '' },
   book_meta_this_edition: { en: 'This Edition',       bg: 'Това издание', ko: '' },
   book_meta_isbn:         { en: 'ISBN',               bg: '', ko: '' },
+  book_meta_collection:   { en: 'Collection',         bg: 'Поредица', ko: '' },
+  book_collection_part:   { en: 'Part {ordinal} of {title}', bg: 'Част {ordinal} от {title}', ko: '' },
   // privacy
   privacy_title:          { en: 'Privacy Policy',     bg: 'Поверителност', ko: '' },
   privacy_p1:             { en: 'We collect a single piece of information: your email address. This is done so we can deliver your eBooks and assist you if you have any issues with your order.', bg: 'Longhouse събира следната лична информация: email адрес. Използваме тази информация за да доставим файловете от поръчката Ви и да предоставим асистенция при проблеми с поръчката Ви.', ko: '' },
