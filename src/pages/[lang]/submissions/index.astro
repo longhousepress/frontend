@@ -51,6 +51,7 @@ const t = useTranslations(lang);
       enctype="multipart/form-data"
       class="space-y-6"
     >
+      <input type="hidden" name="locale" value={lang} />
       <div>
         <label for="submitter" class="block text-sm font-medium mb-2">
           {t('submissions_form_name')} <span class="text-error">*</span>
